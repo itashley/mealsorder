@@ -1,18 +1,17 @@
-import axios from 'axios';
-import { getToken } from './Common'; // Ensure the correct path is used
+import axios from "axios";
+import { getToken } from "./Common"; // Ensure the correct path is used
 
 // Function to get the token dynamically
 const getAuthToken = () => {
   const token = getToken();
-  return token ? `Bearer ${token}` : '';
+  return token ? `Bearer ${token}` : "";
 };
 
 // Create an Axios instance
 const instance = axios.create({
-  baseURL: 'https://meals.primahotelindonesia.info/',
+  baseURL: "https://meals.primahotelindonesia.info",
   headers: {
-   
-    'content-type': 'text/json',
+    "content-type": "text/json",
   },
 });
 
