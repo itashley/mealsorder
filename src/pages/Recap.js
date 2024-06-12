@@ -138,10 +138,31 @@ function Recap() {
         <tr key={index}>
           <td>{hotel}</td>
           {range.map((date, i) => (
-            <td key={i}>{getTotalAmount(hotel, date)}</td>
+            <td
+              style={{
+                textAlign: "center",
+              }}
+              key={i}
+            >
+              {getTotalAmount(hotel, date)}
+            </td>
           ))}
-          <td>{totalAmountForHotel.toLocaleString()}</td>
-          {price && <td>{totalPrice.toLocaleString()}</td>}
+          <td
+            style={{
+              textAlign: "center",
+            }}
+          >
+            {totalAmountForHotel.toLocaleString()}
+          </td>
+          {price && (
+            <td
+              style={{
+                textAlign: "center",
+              }}
+            >
+              {totalPrice.toLocaleString()}
+            </td>
+          )}
         </tr>
       );
     });
@@ -166,12 +187,33 @@ function Recap() {
 
     return (
       <tr>
-        <th>TOTAL</th>
+        <th>Total by Date</th>
         {totalsForDate.map((total, index) => (
-          <th key={index}>{total.toLocaleString()}</th>
+          <th
+            style={{
+              textAlign: "center",
+            }}
+            key={index}
+          >
+            {total.toLocaleString()}
+          </th>
         ))}
-        <th>{totalAll.toLocaleString()}</th>
-        {price && <th>{priceTotalTotal.toLocaleString()}</th>}
+        <th
+          style={{
+            textAlign: "center",
+          }}
+        >
+          {totalAll.toLocaleString()}
+        </th>
+        {price && (
+          <th
+            style={{
+              textAlign: "center",
+            }}
+          >
+            {priceTotalTotal.toLocaleString()}
+          </th>
+        )}
       </tr>
     );
   };
@@ -267,12 +309,32 @@ function Recap() {
       >
         <Card
           className="text-justify"
-          style={{ width: "100%", fontSize: "11px" }}
+          style={{ width: "auto", fontSize: "11px", minWidth: "400px" }}
         >
           <Card.Body>
-            <Card.Title>REKAPITULASI CATERING</Card.Title>
+            <Card.Title>CATERING RECAPITULATION</Card.Title>
             <Card.Text>Set date range to get report</Card.Text>
-            {price && <Card.Text>Entered Price : Rp{price}</Card.Text>}
+            {startDate &&
+              endDate &&
+              !checkRangeDate &&
+              formSubmitted &&
+              dataFetched &&
+              !isLoading && (
+                <Card.Text
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "bold",
+                    marginBottom: "4px",
+                  }}
+                >
+                  Order from: {moment(startDate).format("LL")}
+                  {"  to  "}
+                  {moment(endDate).format("LL")}
+                </Card.Text>
+              )}
+            {price && data.length > 0 && (
+              <Card.Text>Entered Price : Rp{price}</Card.Text>
+            )}
             {!checkRangeDate ? (
               formSubmitted ? (
                 dataFetched && !isLoading ? (
@@ -284,12 +346,43 @@ function Recap() {
                     >
                       <thead>
                         <tr>
-                          <th>Nama Hotel</th>
+                          <th
+                            style={{
+                              width: "130px",
+                              textAlign: "center",
+                            }}
+                          >
+                            Hotel Name
+                          </th>
                           {range.map((date, index) => (
-                            <th key={index}>{moment(date).format("LL")}</th>
+                            <th
+                              style={{
+                                width: "90px",
+                                textAlign: "center",
+                              }}
+                              key={index}
+                            >
+                              {moment(date).format("LL")}
+                            </th>
                           ))}
-                          <th>TOTAL</th>
-                          {price && <th>Total Price</th>}{" "}
+                          <th
+                            style={{
+                              width: "100px",
+                              textAlign: "center",
+                            }}
+                          >
+                            Total by Hotel
+                          </th>
+                          {price && (
+                            <th
+                              style={{
+                                width: "90px",
+                                textAlign: "center",
+                              }}
+                            >
+                              Total Price
+                            </th>
+                          )}{" "}
                           {/* New column header */}
                         </tr>
                       </thead>

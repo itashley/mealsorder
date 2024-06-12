@@ -137,7 +137,7 @@ function Order() {
 
   return (
     <div>
-      <Navbar bg="dark" variant="dark" expand="lg" className="mb-5">
+      <Navbar bg="dark" variant="dark" expand="lg" className="mb-4">
         <Container>
           <Navbar.Brand as={Link} to="/">
             Meals Order
@@ -192,7 +192,7 @@ function Order() {
       >
         <Card
           className="text-justify"
-          style={{ width: "100%", fontSize: "11px" }}
+          style={{ width: "auto", fontSize: "11px", minWidth: "600px" }}
         >
           <Card.Body>
             <Card.Title>MEALS ORDER</Card.Title>
@@ -230,22 +230,57 @@ function Order() {
                   >
                     <thead>
                       <tr>
-                        <th rowSpan="2">Departments</th>
+                        <th
+                          rowSpan="2"
+                          style={{
+                            width: "120px",
+                            textAlign: "center",
+                            verticalAlign: "middle",
+                          }}
+                        >
+                          Departments
+                        </th>
                         {hotels.map((hotel, index) => (
-                          <th key={index} colSpan="3">
+                          <th
+                            key={index}
+                            colSpan="3"
+                            style={{ width: "130px", textAlign: "center" }}
+                          >
                             {hotel}
                           </th>
                         ))}
-                        <th rowSpan="2" className="col-1">
-                          Total by Departments
+                        <th
+                          rowSpan="2"
+                          style={{
+                            width: "100px",
+                            textAlign: "center",
+                            verticalAlign: "middle",
+                          }}
+                        >
+                          Total by Department
                         </th>
                       </tr>
                       <tr>
                         {hotels.map((hotel, index) => (
                           <React.Fragment key={index}>
-                            <th key={`m-${index}`}>M</th>
-                            <th key={`a-${index}`}>A</th>
-                            <th key={`e-${index}`}>E</th>
+                            <th
+                              key={`m-${index}`}
+                              style={{ textAlign: "center" }}
+                            >
+                              M
+                            </th>
+                            <th
+                              style={{ textAlign: "center" }}
+                              key={`a-${index}`}
+                            >
+                              A
+                            </th>
+                            <th
+                              style={{ textAlign: "center" }}
+                              key={`e-${index}`}
+                            >
+                              E
+                            </th>
                           </React.Fragment>
                         ))}
                       </tr>
@@ -292,19 +327,28 @@ function Order() {
 
                                   return (
                                     <React.Fragment key={hotelIndex}>
-                                      <td key={`m-${hotelIndex}-${index}`}>
+                                      <td
+                                        style={{ textAlign: "center" }}
+                                        key={`m-${hotelIndex}-${index}`}
+                                      >
                                         {mAmount}
                                       </td>
-                                      <td key={`a-${hotelIndex}-${index}`}>
+                                      <td
+                                        style={{ textAlign: "center" }}
+                                        key={`a-${hotelIndex}-${index}`}
+                                      >
                                         {aAmount}
                                       </td>
-                                      <td key={`e-${hotelIndex}-${index}`}>
+                                      <td
+                                        style={{ textAlign: "center" }}
+                                        key={`e-${hotelIndex}-${index}`}
+                                      >
                                         {eAmount}
                                       </td>
                                     </React.Fragment>
                                   );
                                 })}
-                                <td>
+                                <td style={{ textAlign: "center" }}>
                                   {deptTotal.M + deptTotal.A + deptTotal.E}
                                 </td>
                               </tr>
@@ -324,19 +368,35 @@ function Order() {
                               });
                               return (
                                 <React.Fragment key={hotelIndex}>
-                                  <th key={`total-m-${hotelIndex}`}>
+                                  <th
+                                    style={{ textAlign: "center" }}
+                                    key={`total-m-${hotelIndex}`}
+                                  >
                                     {totals.M}
                                   </th>
-                                  <th key={`total-a-${hotelIndex}`}>
+                                  <th
+                                    style={{ textAlign: "center" }}
+                                    key={`total-a-${hotelIndex}`}
+                                  >
                                     {totals.A}
                                   </th>
-                                  <th key={`total-e-${hotelIndex}`}>
+                                  <th
+                                    style={{ textAlign: "center" }}
+                                    key={`total-e-${hotelIndex}`}
+                                  >
                                     {totals.E}
                                   </th>
                                 </React.Fragment>
                               );
                             })}
-                            <th rowSpan="2">
+                            <th
+                              rowSpan="2"
+                              style={{
+                                textAlign: "center",
+                                verticalAlign: "middle",
+                                fontSize: "13px",
+                              }}
+                            >
                               {hotels.reduce((acc, hotel) => {
                                 return (
                                   acc +
@@ -376,6 +436,7 @@ function Order() {
                                 <th
                                   key={`total-hotel-${hotelIndex}`}
                                   colSpan="3"
+                                  style={{ textAlign: "center" }}
                                 >
                                   {total}
                                 </th>
