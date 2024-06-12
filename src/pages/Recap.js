@@ -25,6 +25,11 @@ function Recap() {
   const [endDate, setEndDate] = useState();
   const [price, setPrice] = useState("");
 
+  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [dataFetched, setDataFetched] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [checkRangeDate, setCheckRangeDate] = useState(false);
+
   const doLogout = async () => {
     try {
       const confirmed = await Swal.fire({
@@ -53,22 +58,36 @@ function Recap() {
 
   const getListRec = async (startDate, endDate) => {
     try {
+      setIsLoading(true);
       const response = await axios.get(
         `api/recap/data/${startDate}/${endDate}`
       );
       console.log(response.data);
       setData(response.data.data);
       setRange(response.data.range);
+      setDataFetched(true);
     } catch (err) {
       console.log(err);
     } finally {
+      setIsLoading(false);
       console.log("DONE");
     }
   };
 
   const handleSearch = (e) => {
+    if (startDate > endDate) {
+      // If start date is greater than end date
+      setCheckRangeDate(true);
+      console.log("check range date : ", checkRangeDate);
+    } else {
+      setCheckRangeDate(false);
+      console.log("check range date : ", checkRangeDate);
+    }
     e.preventDefault();
     getListRec(startDate, endDate);
+    setFormSubmitted(true);
+    console.log("formSubmitted : ", formSubmitted);
+    setDataFetched(true);
   };
 
   const handlePriceChange = (e) => {
@@ -114,6 +133,7 @@ function Recap() {
       const totalPrice =
         totalAmountForHotel *
         parseFloat(price.replace(".", "").replace(",", "."));
+
       return (
         <tr key={index}>
           <td>{hotel}</td>
@@ -121,7 +141,7 @@ function Recap() {
             <td key={i}>{getTotalAmount(hotel, date)}</td>
           ))}
           <td>{totalAmountForHotel.toLocaleString()}</td>
-          <td>{totalPrice.toLocaleString()}</td>
+          {price && <td>{totalPrice.toLocaleString()}</td>}
         </tr>
       );
     });
@@ -151,7 +171,7 @@ function Recap() {
           <th key={index}>{total.toLocaleString()}</th>
         ))}
         <th>{totalAll.toLocaleString()}</th>
-        <th>{priceTotalTotal.toLocaleString()}</th>
+        {price && <th>{priceTotalTotal.toLocaleString()}</th>}
       </tr>
     );
   };
@@ -252,32 +272,55 @@ function Recap() {
           <Card.Body>
             <Card.Title>REKAPITULASI CATERING</Card.Title>
             <Card.Text>Set date range to get report</Card.Text>
-            <Card.Text>Entered Price : Rp{price}</Card.Text>
-            <Table className="table-bordered" responsive="sm" ref={tableRef}>
-              <thead>
-                <tr>
-                  <th>Nama Hotel</th>
-                  {range.map((date, index) => (
-                    <th key={index}>{moment(date).format("LL")}</th>
-                  ))}
-                  <th>TOTAL</th>
-                  <th>Total Price</th> {/* New column header */}
-                </tr>
-              </thead>
-              <tbody>
-                {renderTableData()}
-                {renderTotalRow()}
-              </tbody>
-            </Table>
-            <Button
-              variant="primary"
-              type="submit"
-              className="align-right me-2"
-              style={{ fontSize: "11px" }}
-              onClick={onDownload}
-            >
-              Download Excel
-            </Button>
+            {price && <Card.Text>Entered Price : Rp{price}</Card.Text>}
+            {!checkRangeDate ? (
+              formSubmitted ? (
+                dataFetched && !isLoading ? (
+                  data.length > 0 ? (
+                    <Table
+                      className="table-bordered"
+                      responsive="sm"
+                      ref={tableRef}
+                    >
+                      <thead>
+                        <tr>
+                          <th>Nama Hotel</th>
+                          {range.map((date, index) => (
+                            <th key={index}>{moment(date).format("LL")}</th>
+                          ))}
+                          <th>TOTAL</th>
+                          {price && <th>Total Price</th>}{" "}
+                          {/* New column header */}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {renderTableData()}
+                        {renderTotalRow()}
+                      </tbody>
+                    </Table>
+                  ) : (
+                    <p>No data available for the selected date.</p>
+                  )
+                ) : (
+                  <p>Loading...</p>
+                )
+              ) : (
+                <p></p>
+              )
+            ) : (
+              <p>Incorrect date range. Please check your dates.</p>
+            )}
+            {!isLoading && dataFetched && data.length > 0 && (
+              <Button
+                variant="primary"
+                type="submit"
+                className="align-right me-2"
+                style={{ fontSize: "11px" }}
+                onClick={onDownload}
+              >
+                Download Excel
+              </Button>
+            )}
           </Card.Body>
         </Card>
       </Container>
