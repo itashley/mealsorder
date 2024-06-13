@@ -15,7 +15,8 @@ import Swal from "sweetalert2";
 import { useHistory } from "react-router-dom";
 import { removeUserSession } from "../utils/Common";
 import moment from "moment";
-import { useDownloadExcel } from "react-export-table-to-excel";
+//import { useDownloadExcel } from "react-export-table-to-excel";
+import { utils, writeFileXLSX } from "xlsx";
 
 function Recap() {
   const [data, setData] = useState([]);
@@ -225,11 +226,32 @@ function Recap() {
 
   const tableRef = useRef(null);
 
-  const { onDownload } = useDownloadExcel({
-    currentTableRef: tableRef.current,
-    filename: "Recap Catering " + startDate + " - " + endDate + " Rp" + price,
-    sheet: startDate + " - " + endDate,
-  });
+  // const { onDownload } = useDownloadExcel({
+  //   currentTableRef: tableRef.current,
+  //   filename: "Recap Catering " + startDate + " - " + endDate + " Rp" + price,
+  //   sheet: startDate + " - " + endDate,
+  // });
+
+  const xport = React.useCallback(() => {
+    /* Create worksheet from HTML DOM TABLE */
+    console.log("Current table ref: ", tableRef.current);
+    const wb = utils.table_to_book(tableRef.current);
+
+    const getFilename = (startDate, endDate, price) => {
+      const pricePart = price ? " Rp" + price : "";
+      return (
+        "Recap Catering - " +
+        moment(startDate).format("DD/MM/YYYY") +
+        " - " +
+        moment(endDate).format("DD/MM/YYYY") +
+        pricePart +
+        ".xlsx"
+      );
+    };
+    const filename = getFilename(startDate, endDate, price);
+    /* Export to file (start a download) */
+    writeFileXLSX(wb, filename);
+  }, [tableRef, startDate, endDate, price]);
 
   return (
     <div>
@@ -409,7 +431,7 @@ function Recap() {
                 type="submit"
                 className="align-right me-2"
                 style={{ fontSize: "11px" }}
-                onClick={onDownload}
+                onClick={xport}
               >
                 Download Excel
               </Button>

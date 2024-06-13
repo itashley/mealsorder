@@ -17,7 +17,8 @@ import Swal from "sweetalert2";
 import { useHistory } from "react-router-dom";
 import { removeUserSession } from "../utils/Common";
 import moment from "moment";
-import { useDownloadExcel } from "react-export-table-to-excel";
+//import { useDownloadExcel } from "react-export-table-to-excel";
+import { utils, writeFileXLSX } from "xlsx";
 
 function Order() {
   const [data, setData] = useState([]);
@@ -129,11 +130,28 @@ function Order() {
 
   const tableRef = useRef(null);
 
-  const { onDownload } = useDownloadExcel({
-    currentTableRef: tableRef.current,
-    filename: "Meals Order - " + dateSubmitted,
-    sheet: dateSubmitted,
+  // const { onDownload } = useDownloadExcel({
+  //   currentTableRef: tableRef.current,
+  //   filename: "Meals Order - " + dateSubmitted,
+  //   sheet: dateSubmitted,
+  // });
+
+  const xport = React.useCallback(() => {
+    /* Create worksheet from HTML DOM TABLE */
+    console.log("Current table ref: ", tableRef.current);
+    const wb = utils.table_to_book(tableRef.current);
+
+    /* Export to file (start a download) */
+    writeFileXLSX(
+      wb,
+      "Meals Order - " + moment(dateSubmitted).format("DD/MM/YYYY") + ".xlsx"
+    );
   });
+
+  // const handleDownload = () => {
+  //   console.log("Current table ref: ", tableRef.current);
+  //   onDownload();
+  // };
 
   return (
     <div>
@@ -462,7 +480,7 @@ function Order() {
                 type="submit"
                 className="align-right me-2"
                 style={{ fontSize: "11px" }}
-                onClick={onDownload}
+                onClick={xport}
               >
                 Download Excel
               </Button>
