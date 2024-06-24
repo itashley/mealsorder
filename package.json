@@ -8,16 +8,18 @@
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.7.2",
     "bootstrap": "^5.3.3",
+    "css-select": "^4.1.0",
     "moment": "^2.30.1",
+    "nth-check": "^2.0.1",
+    "postcss": "^8.4.31",
     "react": "^18.3.1",
     "react-bootstrap": "^2.10.2",
     "react-data-table-component": "^7.6.2",
     "react-dom": "^18.3.1",
     "react-export-table-to-excel": "^1.0.6",
     "react-router-dom": "^5.3.4",
-    "react-scripts": "5.0.1",
     "styled-components": "^6.1.11",
-    "sweetalert2": "^11.11.0",
+    "sweetalert2": "^11.6.13",
     "web-vitals": "^2.1.4",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.2/xlsx-0.20.2.tgz"
   },
@@ -44,5 +46,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@babel/plugin-transform-private-property-in-object": "^7.24.7",
+    "react-scripts": "5.0.1"
   }
 }

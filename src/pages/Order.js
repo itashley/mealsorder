@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import {
   Container,
@@ -10,6 +10,7 @@ import {
   Table,
   Row,
   Col,
+  CardBody,
 } from "react-bootstrap";
 import { BrowserRouter as Router, Link } from "react-router-dom";
 import axios from "../utils/axios";
@@ -23,14 +24,16 @@ import { utils, writeFileXLSX } from "xlsx";
 function Order() {
   const [data, setData] = useState([]);
   const history = useHistory();
-  const [date, setDate] = useState();
+  const [date, setDate] = useState("");
   const [hotels, setHotels] = useState([]);
   const [departments, setDepartments] = useState([]);
 
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [dataFetched, setDataFetched] = useState(false);
   const [dateSubmitted, setDateSubmitted] = useState();
-  const [status0, setStatus0] = useState(false);
+  const [status1, setStatus1] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const doLogout = async () => {
@@ -61,6 +64,7 @@ function Order() {
 
   const getMealsOrder = async (date) => {
     try {
+      setSearching(true);
       setIsLoading(true);
       console.log("date:", date);
       const response = await axios.get(`api/meals/order/${date}`);
@@ -71,12 +75,13 @@ function Order() {
         (item) => item.stts_order === 0
       );
       console.log("has status0 : ", hasStatus0);
-      setStatus0(hasStatus0);
+      setStatus1(!hasStatus0);
       setDataFetched(true);
     } catch (err) {
       console.log("error : ", err);
     } finally {
       setIsLoading(false);
+      setSearching(false);
       console.log("get meals order DONE");
     }
   };
@@ -114,15 +119,34 @@ function Order() {
     );
   };
 
+  const getToken = () => {
+    // Retrieve token from localStorage
+    const token = localStorage.getItem("token");
+
+    // Return the token
+    return token;
+  };
+
   const onConfirm = async () => {
     try {
+      const token = getToken();
+
+      if (!token) {
+        throw new Error("No authorization token found");
+      }
+      setConfirming(true);
       console.log("confirm date:", dateSubmitted);
-      const response = await axios.post(`/api/confirm/order/`, {
-        dateSubmitted,
+
+      const response = await axios.post(`/public/api/confirm/order`, {
+        date: dateSubmitted,
       });
       console.log("Data fetch by API, res.data: ", response.data);
+      setStatus1(true);
+      console.log("status1: ", status1);
+      setConfirming(false);
     } catch (err) {
-      console.log("error : ", err);
+      console.log("Error:", err);
+      console.log("Response:", err.response);
     } finally {
       console.log("Confirm DONE");
     }
@@ -199,7 +223,7 @@ function Order() {
             className="align-self-end mb-3 me-2"
             style={{ fontSize: "11px" }}
           >
-            Search
+            {searching ? "Searching..." : "Search"}
           </Button>
         </Form>
       </Container>
@@ -208,285 +232,335 @@ function Order() {
         className="d-flex justify-content-center align-items-center"
         style={{ height: "auto" }}
       >
-        <Card
-          className="text-justify"
-          style={{ width: "auto", fontSize: "11px", minWidth: "600px" }}
-        >
-          <Card.Body>
-            <Card.Title>MEALS ORDER</Card.Title>
-            <Card.Text>Set date to get Meals Order</Card.Text>
-            {!isLoading && dataFetched && dateSubmitted && (
-              <Row className="align-items-center mb-3">
-                <Col>
-                  <Card.Text style={{ fontSize: "14px", fontWeight: "bold" }}>
-                    Order for: {moment(dateSubmitted).format("dddd")},{" "}
-                    {moment(dateSubmitted).format("LL")}
-                  </Card.Text>
-                </Col>
-                {status0 && (
-                  <Col className="d-flex justify-content-end">
-                    <Button
-                      variant="primary"
-                      type="submit"
-                      style={{ fontSize: "11px" }}
-                      onClick={onConfirm}
-                    >
-                      Confirm this Order
-                    </Button>
+        {dateSubmitted ? (
+          <Card
+            className="text-justify, mb-3"
+            style={{ width: "auto", fontSize: "11px", minWidth: "600px" }}
+          >
+            <Card.Body>
+              <Card.Title>MEALS ORDER</Card.Title>
+              <Card.Text>Set date to get Meals Order</Card.Text>
+
+              {!isLoading && dataFetched && (
+                <Row className="align-items-center mb-3">
+                  <Col>
+                    <Card.Text style={{ fontSize: "14px", fontWeight: "bold" }}>
+                      Order for: {moment(dateSubmitted).format("dddd")},{" "}
+                      {moment(dateSubmitted).format("LL")}
+                    </Card.Text>
                   </Col>
-                )}
-              </Row>
-            )}
+                  {status1 ? (
+                    <Col className="d-flex justify-content-end">
+                      <Card.Text
+                        style={{ fontSize: "12px", fontWeight: "600" }}
+                      >
+                        This Order has been confirmed.
+                      </Card.Text>
+                    </Col>
+                  ) : (
+                    <Col className="d-flex justify-content-end">
+                      <Button
+                        variant="primary"
+                        type="submit"
+                        style={{ fontSize: "11px" }}
+                        onClick={onConfirm}
+                      >
+                        {confirming ? "Confirming..." : "Confirm this Order"}
+                      </Button>
+                    </Col>
+                  )}
+                </Row>
+              )}
 
-            {formSubmitted ? (
-              dataFetched && !isLoading ? (
-                data.length > 0 ? (
-                  <Table
-                    className="table-bordered"
-                    responsive="sm"
-                    ref={tableRef}
-                  >
-                    <thead>
-                      <tr>
-                        <th
-                          rowSpan="2"
-                          style={{
-                            width: "120px",
-                            textAlign: "center",
-                            verticalAlign: "middle",
-                          }}
-                        >
-                          Departments
-                        </th>
-                        {hotels.map((hotel, index) => (
-                          <th
-                            key={index}
-                            colSpan="3"
-                            style={{ width: "130px", textAlign: "center" }}
-                          >
-                            {hotel}
-                          </th>
-                        ))}
-                        <th
-                          rowSpan="2"
-                          style={{
-                            width: "100px",
-                            textAlign: "center",
-                            verticalAlign: "middle",
-                          }}
-                        >
-                          Total by Department
-                        </th>
-                      </tr>
-                      <tr>
-                        {hotels.map((hotel, index) => (
-                          <React.Fragment key={index}>
-                            <th
-                              key={`m-${index}`}
-                              style={{ textAlign: "center" }}
-                            >
-                              M
-                            </th>
-                            <th
-                              style={{ textAlign: "center" }}
-                              key={`a-${index}`}
-                            >
-                              A
-                            </th>
-                            <th
-                              style={{ textAlign: "center" }}
-                              key={`e-${index}`}
-                            >
-                              E
-                            </th>
-                          </React.Fragment>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {/* this isLoading isn't affect much */}
-                      {isLoading ? (
+              {formSubmitted ? (
+                dataFetched && !isLoading ? (
+                  data.length > 0 ? (
+                    <Table
+                      className="table-bordered"
+                      responsive="sm"
+                      ref={tableRef}
+                    >
+                      <thead>
                         <tr>
-                          <td
-                            colSpan={hotels.length * 3 + 2}
-                            style={{ textAlign: "center" }}
+                          <th
+                            rowSpan="2"
+                            style={{
+                              width: "120px",
+                              textAlign: "center",
+                              verticalAlign: "middle",
+                            }}
                           >
-                            Loading...
-                          </td>
-                        </tr>
-                      ) : (
-                        <>
-                          {departments.map((dept, index) => {
-                            let deptTotal = { M: 0, A: 0, E: 0 };
-                            return (
-                              <tr key={index}>
-                                <td>{dept}</td>
-                                {hotels.map((hotel, hotelIndex) => {
-                                  const deptData = getDepartmentData(
-                                    hotel,
-                                    dept
-                                  );
-                                  const mAmount =
-                                    deptData.length > 0
-                                      ? deptData[0].M_amount
-                                      : 0;
-                                  const aAmount =
-                                    deptData.length > 0
-                                      ? deptData[0].A_amount
-                                      : 0;
-                                  const eAmount =
-                                    deptData.length > 0
-                                      ? deptData[0].E_amount
-                                      : 0;
-
-                                  deptTotal.M += mAmount;
-                                  deptTotal.A += aAmount;
-                                  deptTotal.E += eAmount;
-
-                                  return (
-                                    <React.Fragment key={hotelIndex}>
-                                      <td
-                                        style={{ textAlign: "center" }}
-                                        key={`m-${hotelIndex}-${index}`}
-                                      >
-                                        {mAmount}
-                                      </td>
-                                      <td
-                                        style={{ textAlign: "center" }}
-                                        key={`a-${hotelIndex}-${index}`}
-                                      >
-                                        {aAmount}
-                                      </td>
-                                      <td
-                                        style={{ textAlign: "center" }}
-                                        key={`e-${hotelIndex}-${index}`}
-                                      >
-                                        {eAmount}
-                                      </td>
-                                    </React.Fragment>
-                                  );
-                                })}
-                                <td style={{ textAlign: "center" }}>
-                                  {deptTotal.M + deptTotal.A + deptTotal.E}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                          <tr>
-                            <th>Total by Shift</th>
-                            {hotels.map((hotel, hotelIndex) => {
-                              const totals = { M: 0, A: 0, E: 0 };
-                              departments.forEach((dept) => {
-                                const deptData = getDepartmentData(hotel, dept);
-                                if (deptData.length > 0) {
-                                  totals.M += deptData[0].M_amount;
-                                  totals.A += deptData[0].A_amount;
-                                  totals.E += deptData[0].E_amount;
-                                }
-                              });
-                              return (
-                                <React.Fragment key={hotelIndex}>
-                                  <th
-                                    style={{ textAlign: "center" }}
-                                    key={`total-m-${hotelIndex}`}
-                                  >
-                                    {totals.M}
-                                  </th>
-                                  <th
-                                    style={{ textAlign: "center" }}
-                                    key={`total-a-${hotelIndex}`}
-                                  >
-                                    {totals.A}
-                                  </th>
-                                  <th
-                                    style={{ textAlign: "center" }}
-                                    key={`total-e-${hotelIndex}`}
-                                  >
-                                    {totals.E}
-                                  </th>
-                                </React.Fragment>
-                              );
-                            })}
+                            Departments
+                          </th>
+                          {hotels.map((hotel, index) => (
                             <th
-                              rowSpan="2"
-                              style={{
-                                textAlign: "center",
-                                verticalAlign: "middle",
-                                fontSize: "13px",
-                              }}
+                              key={index}
+                              colSpan="3"
+                              style={{ width: "130px", textAlign: "center" }}
                             >
-                              {hotels.reduce((acc, hotel) => {
-                                return (
-                                  acc +
-                                  departments.reduce((deptAcc, dept) => {
+                              {hotel}
+                            </th>
+                          ))}
+                          <th
+                            rowSpan="2"
+                            style={{
+                              width: "100px",
+                              textAlign: "center",
+                              verticalAlign: "middle",
+                            }}
+                          >
+                            Total by Department
+                          </th>
+                        </tr>
+                        <tr>
+                          {hotels.map((hotel, index) => (
+                            <React.Fragment key={index}>
+                              <th
+                                key={`m-${index}`}
+                                style={{ textAlign: "center" }}
+                              >
+                                M
+                              </th>
+                              <th
+                                style={{ textAlign: "center" }}
+                                key={`a-${index}`}
+                              >
+                                A
+                              </th>
+                              <th
+                                style={{ textAlign: "center" }}
+                                key={`e-${index}`}
+                              >
+                                E
+                              </th>
+                            </React.Fragment>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {/* this isLoading isn't affect much */}
+                        {isLoading ? (
+                          <tr>
+                            <td
+                              colSpan={hotels.length * 3 + 2}
+                              style={{ textAlign: "center" }}
+                            >
+                              Loading...
+                            </td>
+                          </tr>
+                        ) : (
+                          <>
+                            {departments.map((dept, index) => {
+                              let deptTotal = { M: 0, A: 0, E: 0 };
+                              return (
+                                <tr key={index}>
+                                  <td>{dept}</td>
+                                  {hotels.map((hotel, hotelIndex) => {
                                     const deptData = getDepartmentData(
                                       hotel,
                                       dept
                                     );
-                                    if (deptData.length > 0) {
-                                      return (
-                                        deptAcc +
-                                        deptData[0].M_amount +
-                                        deptData[0].A_amount +
-                                        deptData[0].E_amount
-                                      );
-                                    }
-                                    return deptAcc;
-                                  }, 0)
-                                );
-                              }, 0)}
-                            </th>
-                          </tr>
-                          <tr>
-                            <th>Total by Hotel</th>
-                            {hotels.map((hotel, hotelIndex) => {
-                              let total = 0;
-                              departments.forEach((dept) => {
-                                const deptData = getDepartmentData(hotel, dept);
-                                if (deptData.length > 0) {
-                                  total +=
-                                    deptData[0].M_amount +
-                                    deptData[0].A_amount +
-                                    deptData[0].E_amount;
-                                }
-                              });
-                              return (
-                                <th
-                                  key={`total-hotel-${hotelIndex}`}
-                                  colSpan="3"
-                                  style={{ textAlign: "center" }}
-                                >
-                                  {total}
-                                </th>
+                                    const mAmount =
+                                      deptData.length > 0
+                                        ? deptData[0].M_amount
+                                        : 0;
+                                    const aAmount =
+                                      deptData.length > 0
+                                        ? deptData[0].A_amount
+                                        : 0;
+                                    const eAmount =
+                                      deptData.length > 0
+                                        ? deptData[0].E_amount
+                                        : 0;
+
+                                    deptTotal.M += mAmount;
+                                    deptTotal.A += aAmount;
+                                    deptTotal.E += eAmount;
+
+                                    return (
+                                      <React.Fragment key={hotelIndex}>
+                                        <td
+                                          style={{ textAlign: "center" }}
+                                          key={`m-${hotelIndex}-${index}`}
+                                        >
+                                          {mAmount}
+                                        </td>
+                                        <td
+                                          style={{ textAlign: "center" }}
+                                          key={`a-${hotelIndex}-${index}`}
+                                        >
+                                          {aAmount}
+                                        </td>
+                                        <td
+                                          style={{ textAlign: "center" }}
+                                          key={`e-${hotelIndex}-${index}`}
+                                        >
+                                          {eAmount}
+                                        </td>
+                                      </React.Fragment>
+                                    );
+                                  })}
+                                  <td style={{ textAlign: "center" }}>
+                                    {deptTotal.M + deptTotal.A + deptTotal.E}
+                                  </td>
+                                </tr>
                               );
                             })}
-                          </tr>
-                        </>
-                      )}
-                    </tbody>
-                  </Table>
+                            <tr>
+                              <th>Total by Shift</th>
+                              {hotels.map((hotel, hotelIndex) => {
+                                const totals = { M: 0, A: 0, E: 0 };
+                                departments.forEach((dept) => {
+                                  const deptData = getDepartmentData(
+                                    hotel,
+                                    dept
+                                  );
+                                  if (deptData.length > 0) {
+                                    totals.M += deptData[0].M_amount;
+                                    totals.A += deptData[0].A_amount;
+                                    totals.E += deptData[0].E_amount;
+                                  }
+                                });
+                                return (
+                                  <React.Fragment key={hotelIndex}>
+                                    <th
+                                      style={{ textAlign: "center" }}
+                                      key={`total-m-${hotelIndex}`}
+                                    >
+                                      {totals.M}
+                                    </th>
+                                    <th
+                                      style={{ textAlign: "center" }}
+                                      key={`total-a-${hotelIndex}`}
+                                    >
+                                      {totals.A}
+                                    </th>
+                                    <th
+                                      style={{ textAlign: "center" }}
+                                      key={`total-e-${hotelIndex}`}
+                                    >
+                                      {totals.E}
+                                    </th>
+                                  </React.Fragment>
+                                );
+                              })}
+                              <th
+                                rowSpan="2"
+                                style={{
+                                  textAlign: "center",
+                                  verticalAlign: "middle",
+                                  fontSize: "13px",
+                                }}
+                              >
+                                {hotels.reduce((acc, hotel) => {
+                                  return (
+                                    acc +
+                                    departments.reduce((deptAcc, dept) => {
+                                      const deptData = getDepartmentData(
+                                        hotel,
+                                        dept
+                                      );
+                                      if (deptData.length > 0) {
+                                        return (
+                                          deptAcc +
+                                          deptData[0].M_amount +
+                                          deptData[0].A_amount +
+                                          deptData[0].E_amount
+                                        );
+                                      }
+                                      return deptAcc;
+                                    }, 0)
+                                  );
+                                }, 0)}
+                              </th>
+                            </tr>
+                            <tr>
+                              <th>Total by Hotel</th>
+                              {hotels.map((hotel, hotelIndex) => {
+                                let total = 0;
+                                departments.forEach((dept) => {
+                                  const deptData = getDepartmentData(
+                                    hotel,
+                                    dept
+                                  );
+                                  if (deptData.length > 0) {
+                                    total +=
+                                      deptData[0].M_amount +
+                                      deptData[0].A_amount +
+                                      deptData[0].E_amount;
+                                  }
+                                });
+                                return (
+                                  <th
+                                    key={`total-hotel-${hotelIndex}`}
+                                    colSpan="3"
+                                    style={{ textAlign: "center" }}
+                                  >
+                                    {total}
+                                  </th>
+                                );
+                              })}
+                            </tr>
+                          </>
+                        )}
+                      </tbody>
+                    </Table>
+                  ) : (
+                    <p>No data available for the selected date.</p>
+                  )
                 ) : (
-                  <p>No data available for the selected date.</p>
+                  <p>Loading...</p>
                 )
               ) : (
-                <p>Loading...</p>
-              )
-            ) : (
-              <p></p>
-            )}
-            {!isLoading && dataFetched && data.length > 0 && (
-              <Button
-                variant="primary"
-                type="submit"
-                className="align-right me-2"
-                style={{ fontSize: "11px" }}
-                onClick={xport}
+                <p></p>
+              )}
+              {!isLoading && dataFetched && data.length > 0 && (
+                <Button
+                  variant="primary"
+                  type="submit"
+                  className="align-right me-2"
+                  style={{ fontSize: "11px" }}
+                  onClick={xport}
+                >
+                  Download Excel
+                </Button>
+              )}
+            </Card.Body>
+          </Card>
+        ) : (
+          <Card
+            className="text-justify"
+            style={{
+              width: "auto",
+              fontSize: "11px",
+              minWidth: "600px",
+              border: "none",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              marginRight: "49px",
+            }}
+          >
+            <Card.Body
+              style={{
+                paddingTop: "4px",
+                display: "flex",
+                justifyContent: "start",
+                alignItems: "start",
+                flexDirection: "column",
+              }}
+            >
+              <Card.Title
+                style={{
+                  fontWeight: "700",
+                }}
               >
-                Download Excel
-              </Button>
-            )}
-          </Card.Body>
-        </Card>
+                MEALS ORDER
+              </Card.Title>
+              <Card.Text>Set date to get Meals Order.</Card.Text>
+            </Card.Body>
+          </Card>
+        )}
       </Container>
     </div>
   );
