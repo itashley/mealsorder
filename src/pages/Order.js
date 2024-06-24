@@ -87,12 +87,29 @@ function Order() {
   };
 
   const extractUniqueNames = (data) => {
+    // Get unique hotel names
     const uniqueHotels = [...new Set(data.map((item) => item.nm_hotel))];
+
+    // Sort unique hotels by hotel_id
+    uniqueHotels.sort((hotelA, hotelB) => {
+      // Find the data objects for hotelA and hotelB
+      const hotelAData = data.find((item) => item.nm_hotel === hotelA);
+      const hotelBData = data.find((item) => item.nm_hotel === hotelB);
+
+      // Compare hotel_id values
+      return hotelAData.hotel_id - hotelBData.hotel_id;
+    });
+
+    // Get unique departments
     const uniqueDepartments = [
       ...new Set(data.map((item) => item.nm_department)),
     ];
+
+    // Update state with sorted hotels and departments
     setHotels(uniqueHotels);
+    console.log("hotels in extract: ", uniqueHotels);
     setDepartments(uniqueDepartments);
+    console.log("departments in extract: ", departments);
   };
 
   const handleSearch = (e) => {
@@ -249,26 +266,27 @@ function Order() {
                       {moment(dateSubmitted).format("LL")}
                     </Card.Text>
                   </Col>
-                  {status1 ? (
-                    <Col className="d-flex justify-content-end">
-                      <Card.Text
-                        style={{ fontSize: "12px", fontWeight: "600" }}
-                      >
-                        This Order has been confirmed.
-                      </Card.Text>
-                    </Col>
-                  ) : (
-                    <Col className="d-flex justify-content-end">
-                      <Button
-                        variant="primary"
-                        type="submit"
-                        style={{ fontSize: "11px" }}
-                        onClick={onConfirm}
-                      >
-                        {confirming ? "Confirming..." : "Confirm this Order"}
-                      </Button>
-                    </Col>
-                  )}
+                  {data.length > 0 &&
+                    (status1 ? (
+                      <Col className="d-flex justify-content-end">
+                        <Card.Text
+                          style={{ fontSize: "12px", fontWeight: "600" }}
+                        >
+                          This Order has been confirmed.
+                        </Card.Text>
+                      </Col>
+                    ) : (
+                      <Col className="d-flex justify-content-end">
+                        <Button
+                          variant="primary"
+                          type="submit"
+                          style={{ fontSize: "11px" }}
+                          onClick={onConfirm}
+                        >
+                          {confirming ? "Confirming..." : "Confirm this Order"}
+                        </Button>
+                      </Col>
+                    ))}
                 </Row>
               )}
 
