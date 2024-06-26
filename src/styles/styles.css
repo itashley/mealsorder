@@ -11,3 +11,20 @@ input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
+
+:root {
+  --kendo-table-border-width: 1px;
+  --kendo-table-cell-vertical-border-width: 1px;
+  --kendo-table-cell-horizontal-border-width: 1px;
+}
+
+/* Apply these variables to your table or specific table elements */
+.custom-table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.custom-table th,
+.custom-table td {
+  border: var(--kendo-table-border-width) solid #8f8f8f; /* Adjust color as needed */
+}

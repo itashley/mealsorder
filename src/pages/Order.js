@@ -21,6 +21,7 @@ import moment from "moment";
 //import { useDownloadExcel } from "react-export-table-to-excel";
 import { utils, writeFileXLSX } from "xlsx";
 import "../styles/styles.css"; // Adjust the path if necessary
+import { savePDF } from "@progress/kendo-react-pdf";
 
 function Order() {
   const [data, setData] = useState([]);
@@ -41,9 +42,9 @@ function Order() {
   const [confirming, setConfirming] = useState(false);
   const [searching, setSearching] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [exportPressed, setExportPressed] = useState(false);
 
   const [editMode, setEditMode] = useState(false);
-  const [originalData, setOriginalData] = useState([]);
 
   const doLogout = async () => {
     try {
@@ -81,7 +82,6 @@ function Order() {
       setData(response.data.data);
       extractUniqueNames(response.data.data);
       //calculateTotalsByShift();
-      setOriginalData(response.data.data);
       const hasStatus0 = response.data.data.some(
         (item) => item.stts_order === 0
       );
@@ -99,23 +99,24 @@ function Order() {
   };
 
   const extractUniqueNames = (data) => {
-    // Get unique hotel names
-    const uniqueHotels = [...new Set(data.map((item) => item.nm_hotel))];
+    // Get unique hotels with IDs
+    const uniqueHotels = data.reduce((acc, item) => {
+      if (!acc.find((hotel) => hotel.name === item.nm_hotel)) {
+        acc.push({ id: item.hotel_id, name: item.nm_hotel });
+      }
+      return acc;
+    }, []);
 
     // Sort unique hotels by hotel_id
-    uniqueHotels.sort((hotelA, hotelB) => {
-      // Find the data objects for hotelA and hotelB
-      const hotelAData = data.find((item) => item.nm_hotel === hotelA);
-      const hotelBData = data.find((item) => item.nm_hotel === hotelB);
+    uniqueHotels.sort((hotelA, hotelB) => hotelA.id - hotelB.id);
 
-      // Compare hotel_id values
-      return hotelAData.hotel_id - hotelBData.hotel_id;
-    });
-
-    // Get unique departments
-    const uniqueDepartments = [
-      ...new Set(data.map((item) => item.nm_department)),
-    ];
+    // Get unique departments with IDs
+    const uniqueDepartments = data.reduce((acc, item) => {
+      if (!acc.find((dept) => dept.name === item.nm_department)) {
+        acc.push({ id: item.dept_id, name: item.nm_department });
+      }
+      return acc;
+    }, []);
 
     // Update state with sorted hotels and departments
     setHotels(uniqueHotels);
@@ -131,8 +132,15 @@ function Order() {
   const saveChanges = async () => {
     try {
       setIsLoading(true);
-      //await axios.post(`api/edit/order/${date}`, data);
+      console.log("Data: ", data);
+      console.log("Date: ", dateSubmitted);
+      const res = await axios.post(`/public/api/edit/order`, {
+        date: dateSubmitted,
+        data: data,
+      });
       console.log("Api is hit!");
+      console.log("Data fetch by API, res.data: ", res.data);
+      setData(res.data.data);
       Swal.fire({
         icon: "success",
         title: "Changes saved successfully!",
@@ -153,17 +161,37 @@ function Order() {
   };
 
   const handleDataChange = (newValue, deptIndex, hotelIndex, column) => {
-    const updatedData = [...data];
-    const deptData = updatedData.find(
-      (item) => item.nm_department === departments[deptIndex]
-    );
-    const hotelData = deptData[hotels[hotelIndex]];
+    console.log("newValue:", newValue);
+    console.log("deptIndex:", deptIndex);
+    console.log("hotelIndex:", hotelIndex);
+    console.log("column:", column);
 
-    if (hotelData) {
-      hotelData[column] = parseInt(newValue, 10) || 0;
+    const updatedData = [...data];
+    console.log("Updated data 1st: ", updatedData);
+
+    // Get the department and hotel IDs
+    const deptId = departments[deptIndex].id;
+    const hotelId = hotels[hotelIndex].id;
+    console.log("deptId:", deptId);
+    console.log("hotelId:", hotelId);
+
+    // Find the item that matches the department and hotel IDs
+    const itemIndex = updatedData.findIndex(
+      (item) => item.dept_id === deptId && item.hotel_id === hotelId
+    );
+    console.log("itemIndex:", itemIndex);
+
+    if (itemIndex !== -1) {
+      // Update the value of the specified column
+      updatedData[itemIndex][column] = parseInt(newValue, 10) || 0;
+
+      // Update the state and recalculate totals
+      console.log("updatedData 2nd:", updatedData);
       setData(updatedData);
       calculateTotalsByShift();
       calculateTotalsByHotel();
+    } else {
+      console.log("Item not found in the data.");
     }
   };
 
@@ -179,10 +207,10 @@ function Order() {
     return departments.map((dept, deptIndex) => {
       let deptTotal = { M: 0, A: 0, E: 0 };
       return (
-        <tr key={deptIndex}>
-          <td>{dept}</td>
+        <tr key={dept.id}>
+          <td>{dept.name}</td>
           {hotels.map((hotel, hotelIndex) => {
-            const deptData = getDepartmentData(hotel, dept);
+            const deptData = getDepartmentData(hotel.id, dept.id);
             const mAmount = deptData.length > 0 ? deptData[0].M_amount : 0;
             const aAmount = deptData.length > 0 ? deptData[0].A_amount : 0;
             const eAmount = deptData.length > 0 ? deptData[0].E_amount : 0;
@@ -192,12 +220,13 @@ function Order() {
             deptTotal.E += eAmount;
 
             return (
-              <React.Fragment key={hotelIndex}>
+              <React.Fragment key={hotel.id}>
                 <td
                   style={{
                     textAlign: "center",
                     padding: editMode ? "0px" : "8px",
                     width: "44px",
+                    height: "28px",
                   }}
                 >
                   {editMode ? (
@@ -214,8 +243,9 @@ function Order() {
                       }
                       style={{
                         width: "100%", // Make the input fill the entire <td>
-                        height: "100%",
-                        paddingTop: "8px",
+                        //height: "31px",
+                        height: "96%",
+                        paddingTop: "0px",
                         paddingBottom: "0px",
                         textAlign: "center",
                         boxSizing: "border-box", // Ensure padding and border are included in width
@@ -234,6 +264,7 @@ function Order() {
                     textAlign: "center",
                     padding: editMode ? "0px" : "8px",
                     width: "44px",
+                    height: "28px",
                   }}
                 >
                   {editMode ? (
@@ -250,8 +281,8 @@ function Order() {
                       }
                       style={{
                         width: "100%", // Make the input fill the entire <td>
-                        height: "100%",
-                        paddingTop: "8px",
+                        height: "96%",
+                        paddingTop: "0px",
                         paddingBottom: "0px",
                         textAlign: "center",
                         boxSizing: "border-box", // Ensure padding and border are included in width
@@ -270,6 +301,7 @@ function Order() {
                     textAlign: "center",
                     padding: editMode ? "0px" : "8px",
                     width: "44px",
+                    height: "28px",
                   }}
                 >
                   {editMode ? (
@@ -286,8 +318,8 @@ function Order() {
                       }
                       style={{
                         width: "100%", // Make the input fill the entire <td>
-                        height: "100%",
-                        paddingTop: "8px",
+                        height: "96%",
+                        paddingTop: "0px",
                         paddingBottom: "0px",
                         textAlign: "center",
                         boxSizing: "border-box", // Ensure padding and border are included in width
@@ -317,19 +349,21 @@ function Order() {
     const totalShiftSumData = { M: 0, A: 0, E: 0 };
 
     hotels.forEach((hotel) => {
-      totalShiftData[hotel] = { M: 0, A: 0, E: 0 };
-      totalShiftSumData[hotel] = 0;
+      totalShiftData[hotel.id] = { M: 0, A: 0, E: 0 };
+      totalShiftSumData[hotel.id] = 0;
+
       departments.forEach((dept) => {
-        const deptData = getDepartmentData(hotel, dept);
+        const deptData = getDepartmentData(hotel.id, dept.id);
         if (deptData.length > 0) {
-          totalShiftData[hotel].M += deptData[0].M_amount;
-          totalShiftData[hotel].A += deptData[0].A_amount;
-          totalShiftData[hotel].E += deptData[0].E_amount;
+          totalShiftData[hotel.id].M += deptData[0].M_amount;
+          totalShiftData[hotel.id].A += deptData[0].A_amount;
+          totalShiftData[hotel.id].E += deptData[0].E_amount;
         }
       });
     });
 
     setTotalShift(totalShiftData);
+    console.log("Total Shift Data:", totalShiftData);
 
     Object.values(totalShiftData).forEach((hotelData) => {
       totalShiftSumData.M += hotelData.M;
@@ -338,6 +372,7 @@ function Order() {
     });
 
     setTotalShiftSum(totalShiftSumData);
+    console.log("Total Shift Sum Data:", totalShiftSumData);
   };
 
   const calculateTotalsByHotel = () => {
@@ -345,29 +380,36 @@ function Order() {
     const totalHotelSum = {};
 
     hotels.forEach((hotel) => {
-      totalHotelData[hotel] = { M: 0, A: 0, E: 0 };
-      totalHotelSum[hotel] = 0;
+      totalHotelData[hotel.id] = { M: 0, A: 0, E: 0 };
+      totalHotelSum[hotel.id] = 0;
     });
 
     hotels.forEach((hotel) => {
       departments.forEach((dept) => {
-        const deptData = getDepartmentData(hotel, dept);
+        const deptData = getDepartmentData(hotel.id, dept.id);
         if (deptData.length > 0) {
-          totalHotelData[hotel].M += deptData[0].M_amount;
-          totalHotelData[hotel].A += deptData[0].A_amount;
-          totalHotelData[hotel].E += deptData[0].E_amount;
+          totalHotelData[hotel.id].M += deptData[0].M_amount;
+          totalHotelData[hotel.id].A += deptData[0].A_amount;
+          totalHotelData[hotel.id].E += deptData[0].E_amount;
         }
       });
 
-      totalHotelSum[hotel] =
-        totalHotelData[hotel].M +
-        totalHotelData[hotel].A +
-        totalHotelData[hotel].E;
+      totalHotelSum[hotel.id] =
+        totalHotelData[hotel.id].M +
+        totalHotelData[hotel.id].A +
+        totalHotelData[hotel.id].E;
     });
 
     setTotalHotel(totalHotelData);
     setTotalHotelSum(totalHotelSum);
     setTotalAll(
+      Object.values(totalHotelSum).reduce((acc, total) => acc + total, 0)
+    );
+
+    console.log("Total Hotel Data:", totalHotelData);
+    console.log("Total Hotel Sum:", totalHotelSum);
+    console.log(
+      "Total All:",
       Object.values(totalHotelSum).reduce((acc, total) => acc + total, 0)
     );
   };
@@ -379,19 +421,9 @@ function Order() {
     }
   }, [hotels, departments]);
 
-  // useEffect(() => {
-  //   // Calculate tomorrow's date
-  //   const tomorrow = moment().add(1, "days").format("YYYY-MM-DD");
-  //   setDate(tomorrow);
-  //   getMealsOrder(tomorrow);
-  //   //setFormSubmitted(true);
-  //   setDateSubmitted(tomorrow);
-  // }, []);
-
-  const getDepartmentData = (hotelName, departmentName) => {
+  const getDepartmentData = (hotelId, departmentId) => {
     return data.filter(
-      (item) =>
-        item.nm_hotel === hotelName && item.nm_department === departmentName
+      (item) => item.hotel_id === hotelId && item.dept_id === departmentId
     );
   };
 
@@ -452,6 +484,18 @@ function Order() {
   //   console.log("Current table ref: ", tableRef.current);
   //   onDownload();
   // };
+
+  const exportPDF = async () => {
+    const element = document.getElementById("export-table");
+    if (!element) return;
+
+    try {
+      await savePDF(element, { paperSize: "A4", margin: 40 });
+      setExportPressed(true);
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+    }
+  };
 
   return (
     <div>
@@ -531,7 +575,7 @@ function Order() {
                 Set date to get Meals Order
               </Card.Text> */}
 
-              {!isLoading && dataFetched && (
+              {!isLoading && data.length == 0 && (
                 <Row className="align-items-center mb-3">
                   <Col>
                     <Card.Text style={{ fontSize: "14px", fontWeight: "bold" }}>
@@ -571,77 +615,104 @@ function Order() {
                         <Button
                           variant="primary"
                           type="submit"
-                          className="align-self-end"
+                          className="align-self-end mb-2"
                           style={{ fontSize: "11px" }}
+                          onClick={exportPDF}
                         >
-                          Order to Vendor
+                          Export PDF
                         </Button>
-                        <Table className="table-bordered mt-2" responsive="sm">
-                          <thead>
-                            <tr>
-                              <th
-                                rowSpan="2"
-                                style={{
-                                  width: "200px",
-                                  textAlign: "center",
-                                  verticalAlign: "middle",
-                                }}
-                              >
-                                Hotel Name
-                              </th>
-                              <th
-                                colSpan="3"
-                                style={{
-                                  textAlign: "center",
-                                }}
-                              >
-                                Shift
-                              </th>
-                            </tr>
-                            <tr>
-                              <th style={{ textAlign: "center" }}>M</th>
-                              <th style={{ textAlign: "center" }}>A</th>
-                              <th style={{ textAlign: "center" }}>E</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {hotels.map((hotel, hotelIndex) => {
-                              return (
-                                <React.Fragment key={hotelIndex}>
-                                  <tr>
-                                    <td>{hotel}</td>
-                                    <td
-                                      style={{ textAlign: "center" }}
-                                      key={`total-m-${hotelIndex}`}
-                                    >
-                                      {totalShift[hotel]?.M ?? 0}
-                                    </td>
-                                    <td
-                                      style={{ textAlign: "center" }}
-                                      key={`total-a-${hotelIndex}`}
-                                    >
-                                      {totalShift[hotel]?.A ?? 0}
-                                    </td>
-                                    <td
-                                      style={{ textAlign: "center" }}
-                                      key={`total-e-${hotelIndex}`}
-                                    >
-                                      {totalShift[hotel]?.E ?? 0}
-                                    </td>
-                                  </tr>
-                                </React.Fragment>
-                              );
-                            })}
-                            <tr>
-                              <th className="text-center">TOTAL BY SHIFT</th>
-                              <th>{totalShiftSum.M}</th>
-                              <th>{totalShiftSum.A}</th>
-                              <th>{totalShiftSum.E}</th>
-                            </tr>
-                          </tbody>
-                        </Table>
+                        <div id="export-table">
+                          <Card.Text
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: "bold",
+                              marginBottom: "0px",
+                            }}
+                          >
+                            Order PHI for:{" "}
+                            {moment(dateSubmitted).format("dddd")},{" "}
+                            {moment(dateSubmitted).format("LL")}
+                          </Card.Text>
+
+                          <Table
+                            className="table-bordered mt-2 custom-table"
+                            responsive="sm"
+                          >
+                            <thead>
+                              <tr>
+                                <th
+                                  rowSpan="2"
+                                  style={{
+                                    width: "200px",
+                                    textAlign: "center",
+                                    verticalAlign: "middle",
+                                  }}
+                                >
+                                  Hotel Name
+                                </th>
+                                <th
+                                  colSpan="3"
+                                  style={{
+                                    textAlign: "center",
+                                  }}
+                                >
+                                  Shift
+                                </th>
+                              </tr>
+                              <tr>
+                                <th style={{ textAlign: "center" }}>M</th>
+                                <th style={{ textAlign: "center" }}>A</th>
+                                <th style={{ textAlign: "center" }}>E</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {hotels.map((hotel, hotelIndex) => {
+                                return (
+                                  <React.Fragment key={hotelIndex}>
+                                    <tr>
+                                      <td>{hotel.name}</td>
+                                      <td
+                                        style={{ textAlign: "center" }}
+                                        key={`total-m-${hotelIndex}`}
+                                      >
+                                        {totalShift[hotel.id]?.M ?? 0}
+                                      </td>
+                                      <td
+                                        style={{ textAlign: "center" }}
+                                        key={`total-a-${hotelIndex}`}
+                                      >
+                                        {totalShift[hotel.id]?.A ?? 0}
+                                      </td>
+                                      <td
+                                        style={{ textAlign: "center" }}
+                                        key={`total-e-${hotelIndex}`}
+                                      >
+                                        {totalShift[hotel.id]?.E ?? 0}
+                                      </td>
+                                    </tr>
+                                  </React.Fragment>
+                                );
+                              })}
+                              <tr>
+                                <th className="text-center">TOTAL BY SHIFT</th>
+                                <th className="text-center">
+                                  {totalShiftSum.M}
+                                </th>
+                                <th className="text-center">
+                                  {totalShiftSum.A}
+                                </th>
+                                <th className="text-center">
+                                  {totalShiftSum.E}
+                                </th>
+                              </tr>
+                            </tbody>
+                          </Table>
+                        </div>
                       </Card>
-                      <Card className="border-0 ms-5">
+                      <Card
+                        className="border-0 ms-5"
+                        style={{ marginTop: "28px" }}
+                      >
                         <Container className="d-flex flex-row justify-content-between p-0">
                           {editMode && (
                             <p
@@ -654,7 +725,7 @@ function Order() {
                                 paddingTop: "8px",
                               }}
                             >
-                              Click cell to edit
+                              Click on the cell to edit
                             </p>
                           )}
                           <Container className="d-flex flex-row justify-content-end p-0">
@@ -707,7 +778,7 @@ function Order() {
                                     textAlign: "center",
                                   }}
                                 >
-                                  {hotel}
+                                  {hotel.name}
                                 </th>
                               ))}
                               <th
@@ -771,19 +842,19 @@ function Order() {
                                           style={{ textAlign: "center" }}
                                           key={`total-m-${hotelIndex}`}
                                         >
-                                          {totalShift[hotel]?.M ?? 0}
+                                          {totalShift[hotel.id]?.M ?? 0}
                                         </th>
                                         <th
                                           style={{ textAlign: "center" }}
                                           key={`total-a-${hotelIndex}`}
                                         >
-                                          {totalShift[hotel]?.A ?? 0}
+                                          {totalShift[hotel.id]?.A ?? 0}
                                         </th>
                                         <th
                                           style={{ textAlign: "center" }}
                                           key={`total-e-${hotelIndex}`}
                                         >
-                                          {totalShift[hotel]?.E ?? 0}
+                                          {totalShift[hotel.id]?.E ?? 0}
                                         </th>
                                       </React.Fragment>
                                     );
@@ -807,7 +878,7 @@ function Order() {
                                       colSpan="3"
                                       style={{ textAlign: "center" }}
                                     >
-                                      {totalHotelSum[hotel]}
+                                      {totalHotelSum[hotel.id]}
                                     </th>
                                   ))}
                                 </tr>
