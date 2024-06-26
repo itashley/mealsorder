@@ -13,7 +13,7 @@ const instance = axios.create({
   headers: {
     "content-type": "text/json",
   },
-  timeout: 10000,
+  timeout: 2000,
 });
 
 // Add a request interceptor to attach the token dynamically

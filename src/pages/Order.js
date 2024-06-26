@@ -21,7 +21,7 @@ import moment from "moment";
 //import { useDownloadExcel } from "react-export-table-to-excel";
 import { utils, writeFileXLSX } from "xlsx";
 import "../styles/styles.css"; // Adjust the path if necessary
-import { savePDF } from "@progress/kendo-react-pdf";
+//import { savePDF } from "@progress/kendo-react-pdf";
 
 function Order() {
   const [data, setData] = useState([]);
@@ -43,6 +43,9 @@ function Order() {
   const [searching, setSearching] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [exportPressed, setExportPressed] = useState(false);
+  const [isTimeout, setIsTimeout] = useState(false);
+
+  //let pdfExportComponent;
 
   const [editMode, setEditMode] = useState(false);
 
@@ -89,8 +92,10 @@ function Order() {
       console.log("has status0 : ", hasStatus0);
       setStatus1(!hasStatus0);
       setDataFetched(true);
+      setIsTimeout(false);
     } catch (err) {
       console.log("error : ", err);
+      isTimeout(true);
     } finally {
       setIsLoading(false);
       setSearching(false);
@@ -126,7 +131,12 @@ function Order() {
   };
 
   const toggleEditMode = () => {
-    setEditMode(!editMode);
+    if (editMode) {
+      getMealsOrder(dateSubmitted);
+      setEditMode(false);
+    } else {
+      setEditMode(true);
+    }
   };
 
   const saveChanges = async () => {
@@ -198,9 +208,9 @@ function Order() {
   const handleSearch = (e) => {
     e.preventDefault();
     getMealsOrder(date);
-
     setFormSubmitted(true);
     setDateSubmitted(date);
+    setEditMode(false);
   };
 
   const renderTableData = () => {
@@ -461,39 +471,80 @@ function Order() {
   };
 
   const tableRef = useRef(null);
+  const tableRef2 = useRef(null);
 
-  // const { onDownload } = useDownloadExcel({
-  //   currentTableRef: tableRef.current,
-  //   filename: "Meals Order - " + dateSubmitted,
-  //   sheet: dateSubmitted,
-  // });
-
-  const xport = React.useCallback(() => {
+  const xport = React.useCallback((ref, index) => {
     /* Create worksheet from HTML DOM TABLE */
-    console.log("Current table ref: ", tableRef.current);
-    const wb = utils.table_to_book(tableRef.current);
+    console.log("Current table ref: ", ref.current);
+    const wb = utils.table_to_book(ref.current);
 
     /* Export to file (start a download) */
-    writeFileXLSX(
-      wb,
-      "Meals Order - " + moment(dateSubmitted).format("DD/MM/YYYY") + ".xlsx"
-    );
+
+    if (!editMode) {
+      if (index == "1") {
+        writeFileXLSX(
+          wb,
+          "Meals Order - " +
+            moment(dateSubmitted).format("DD/MM/YYYY") +
+            ".xlsx"
+        );
+      } else if (index == "2") {
+        writeFileXLSX(
+          wb,
+          "PHI PO Meal - " +
+            moment(dateSubmitted).format("DD/MM/YYYY") +
+            ".xlsx"
+        );
+      }
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Please save or cancel the changes first",
+        //text: err.message,
+      });
+    }
   });
 
-  // const handleDownload = () => {
-  //   console.log("Current table ref: ", tableRef.current);
-  //   onDownload();
-  // };
+  const handleExport1 = () => {
+    if (tableRef.current) {
+      xport(tableRef, "1");
+    }
+  };
 
-  const exportPDF = async () => {
-    const element = document.getElementById("export-table");
-    if (!element) return;
+  const handleExport2 = () => {
+    if (tableRef2.current) {
+      xport(tableRef2, "2");
+    }
+  };
 
+  const pdfContentRef = useRef(null); // Ref for the div containing content to export
+
+  const sendPDFToVendor = async () => {
     try {
-      await savePDF(element, { paperSize: "A4", margin: 40 });
-      setExportPressed(true);
+      console.log("button export is pressed!");
+      const htmlContent = `<html><body>${pdfContentRef.current.innerHTML}</body></html>`; // Extract HTML content
+
+      const response = await axios.post(
+        `/public/api/msg/vendor`,
+        {
+          html: htmlContent,
+          text: `PHI PO Meal for: ${moment(dateSubmitted).format(
+            "dddd"
+          )}, ${moment(dateSubmitted).format("LL")}`,
+          id_vendor: 1,
+          date: dateSubmitted,
+        }
+        // {
+        //   responseType: "blob", // Ensure response type is blob for binary data (PDF)
+        // }
+      );
+      console.log("api is fetched!");
+      console.log("response: ", response.data.response);
+      console.log("public : ", response.data.public);
+      const url = response.data.response;
+      window.open(url); // Opens PDF in a new tab
     } catch (error) {
-      console.error("Error exporting PDF:", error);
+      console.error("Error exporting to PDF:", error);
     }
   };
 
@@ -543,7 +594,8 @@ function Order() {
             className="align-self-end mb-4 me-2"
             style={{ fontSize: "11px" }}
           >
-            {searching ? "Searching..." : "Search"}
+            Search
+            {/* {searching ? "Searching..." : "Search"} */}
           </Button>
         </Form>
         {/* <Card.Text
@@ -568,7 +620,10 @@ function Order() {
             className="text-justify, mb-3"
             style={{ width: "auto", fontSize: "11px", minWidth: "600px" }}
           >
-            <Card.Body style={{ paddingTop: "11px" }}>
+            <Card.Body
+              className="d-flex flex-column"
+              style={{ paddingTop: "11px" }}
+            >
               {/* {!formSubmitted &&
                 data.length == 0(<Card.Title>MEALS ORDER</Card.Title>)} */}
               {/* <Card.Text className="mb-2">
@@ -612,16 +667,12 @@ function Order() {
                   data.length > 0 ? (
                     <Container className="d-flex flex-row justify-content-between ms-0 ps-0 me-0 pe-0">
                       <Card className="border-0">
-                        <Button
-                          variant="primary"
-                          type="submit"
-                          className="align-self-end mb-2"
-                          style={{ fontSize: "11px" }}
-                          onClick={exportPDF}
+                        <div
+                          ref={pdfContentRef}
+                          style={{
+                            marginTop: "2px",
+                          }}
                         >
-                          Export PDF
-                        </Button>
-                        <div id="export-table">
                           <Card.Text
                             style={{
                               fontSize: "14px",
@@ -629,14 +680,19 @@ function Order() {
                               marginBottom: "0px",
                             }}
                           >
-                            Order PHI for:{" "}
+                            PHI PO Meal for:{" "}
                             {moment(dateSubmitted).format("dddd")},{" "}
                             {moment(dateSubmitted).format("LL")}
                           </Card.Text>
 
                           <Table
-                            className="table-bordered mt-2 custom-table"
                             responsive="sm"
+                            style={{
+                              border: "1px solid black",
+                              borderCollapse: "collapse",
+                              marginTop: "10px",
+                            }}
+                            ref={tableRef2}
                           >
                             <thead>
                               <tr>
@@ -646,6 +702,7 @@ function Order() {
                                     width: "200px",
                                     textAlign: "center",
                                     verticalAlign: "middle",
+                                    border: "1px solid black",
                                   }}
                                 >
                                   Hotel Name
@@ -654,15 +711,40 @@ function Order() {
                                   colSpan="3"
                                   style={{
                                     textAlign: "center",
+                                    border: "1px solid black",
                                   }}
                                 >
                                   Shift
                                 </th>
                               </tr>
                               <tr>
-                                <th style={{ textAlign: "center" }}>M</th>
-                                <th style={{ textAlign: "center" }}>A</th>
-                                <th style={{ textAlign: "center" }}>E</th>
+                                <th
+                                  style={{
+                                    textAlign: "center",
+                                    border: "1px solid black",
+                                    width: "50px",
+                                  }}
+                                >
+                                  M
+                                </th>
+                                <th
+                                  style={{
+                                    textAlign: "center",
+                                    border: "1px solid black",
+                                    width: "50px",
+                                  }}
+                                >
+                                  A
+                                </th>
+                                <th
+                                  style={{
+                                    textAlign: "center",
+                                    border: "1px solid black",
+                                    width: "50px",
+                                  }}
+                                >
+                                  E
+                                </th>
                               </tr>
                             </thead>
                             <tbody>
@@ -670,21 +752,32 @@ function Order() {
                                 return (
                                   <React.Fragment key={hotelIndex}>
                                     <tr>
-                                      <td>{hotel.name}</td>
+                                      <td style={{ border: "1px solid black" }}>
+                                        {hotel.name}
+                                      </td>
                                       <td
-                                        style={{ textAlign: "center" }}
+                                        style={{
+                                          textAlign: "center",
+                                          border: "1px solid black",
+                                        }}
                                         key={`total-m-${hotelIndex}`}
                                       >
                                         {totalShift[hotel.id]?.M ?? 0}
                                       </td>
                                       <td
-                                        style={{ textAlign: "center" }}
+                                        style={{
+                                          textAlign: "center",
+                                          border: "1px solid black",
+                                        }}
                                         key={`total-a-${hotelIndex}`}
                                       >
                                         {totalShift[hotel.id]?.A ?? 0}
                                       </td>
                                       <td
-                                        style={{ textAlign: "center" }}
+                                        style={{
+                                          textAlign: "center",
+                                          border: "1px solid black",
+                                        }}
                                         key={`total-e-${hotelIndex}`}
                                       >
                                         {totalShift[hotel.id]?.E ?? 0}
@@ -694,24 +787,58 @@ function Order() {
                                 );
                               })}
                               <tr>
-                                <th className="text-center">TOTAL BY SHIFT</th>
-                                <th className="text-center">
+                                <th
+                                  className="text-center"
+                                  style={{ border: "1px solid black" }}
+                                >
+                                  TOTAL BY SHIFT
+                                </th>
+                                <th
+                                  className="text-center"
+                                  style={{ border: "1px solid black" }}
+                                >
                                   {totalShiftSum.M}
                                 </th>
-                                <th className="text-center">
+                                <th
+                                  className="text-center"
+                                  style={{ border: "1px solid black" }}
+                                >
                                   {totalShiftSum.A}
                                 </th>
-                                <th className="text-center">
+                                <th
+                                  className="text-center"
+                                  style={{ border: "1px solid black" }}
+                                >
                                   {totalShiftSum.E}
                                 </th>
                               </tr>
                             </tbody>
                           </Table>
                         </div>
+                        <Container className="p-0 m-0 d-flex flex-row justify-content-end">
+                          <Button
+                            variant="primary"
+                            type="submit"
+                            className="mb-2 me-2"
+                            style={{ fontSize: "11px" }}
+                            onClick={sendPDFToVendor}
+                          >
+                            Send as PDF to Vendor
+                          </Button>
+                          <Button
+                            variant="primary"
+                            type="submit"
+                            className="mb-2"
+                            style={{ fontSize: "11px" }}
+                          >
+                            Select Vendor
+                          </Button>
+                        </Container>
                       </Card>
+
                       <Card
                         className="border-0 ms-5"
-                        style={{ marginTop: "28px" }}
+                        style={{ marginTop: "0px" }}
                       >
                         <Container className="d-flex flex-row justify-content-between p-0">
                           {editMode && (
@@ -720,7 +847,7 @@ function Order() {
                               style={{
                                 fontSize: "14px",
                                 fontWeight: "bold",
-                                width: "200px",
+                                width: "400px",
                                 height: "auto",
                                 paddingTop: "8px",
                               }}
@@ -733,7 +860,7 @@ function Order() {
                               <Button
                                 variant="primary"
                                 onClick={saveChanges}
-                                className="align-self-end "
+                                className="align-self-end ps-4 pe-4"
                                 style={{ fontSize: "11px" }}
                               >
                                 Save
@@ -742,7 +869,7 @@ function Order() {
                             <Button
                               variant="primary"
                               type="submit"
-                              className="align-self-end ms-2 "
+                              className="align-self-end ms-2 ps-3 pe-3"
                               onClick={toggleEditMode}
                               style={{ fontSize: "11px" }}
                             >
@@ -752,7 +879,7 @@ function Order() {
                         </Container>
 
                         <Table
-                          className="table-bordered mt-2"
+                          className="table-bordered mt-2 mb-3"
                           responsive="sm"
                           ref={tableRef}
                         >
@@ -891,23 +1018,52 @@ function Order() {
                   ) : (
                     <p>No data available for the selected date.</p>
                   )
+                ) : isTimeout ? (
+                  <p>Fetching Data Timeout. Please try again</p>
                 ) : (
-                  <p>Loading...</p>
+                  <p>Fetching Data...</p>
                 )
               ) : (
                 <p></p>
               )}
-              {!isLoading && dataFetched && data.length > 0 && (
-                <Button
-                  variant="primary"
-                  type="submit"
-                  className="align-right me-2"
-                  style={{ fontSize: "11px" }}
-                  onClick={xport}
-                >
-                  Download Excel
-                </Button>
-              )}
+              <Container className="d-flex flex-row justify-content-between m-0 p-0">
+                {!isLoading && dataFetched && data.length > 0 && (
+                  <Button
+                    variant="primary"
+                    type="submit"
+                    //className="me-1"
+                    style={{
+                      fontSize: "11px",
+                      width: "110px",
+                      paddingRight: "12px",
+                      paddingLeft: "12px",
+                      paddingBottom: "7px",
+                      paddingTop: "7px",
+                    }}
+                    onClick={handleExport2}
+                  >
+                    Download Excel
+                  </Button>
+                )}
+                {!isLoading && dataFetched && data.length > 0 && (
+                  <Button
+                    variant="primary"
+                    type="submit"
+                    //className="me-1 "
+                    style={{
+                      fontSize: "11px",
+                      width: "110px",
+                      paddingRight: "12px",
+                      paddingLeft: "12px",
+                      paddingBottom: "7px",
+                      paddingTop: "7px",
+                    }}
+                    onClick={handleExport1}
+                  >
+                    Download Excel
+                  </Button>
+                )}
+              </Container>
             </Card.Body>
           </Card>
         ) : (
