@@ -11,6 +11,7 @@ import {
   Row,
   Col,
   CardBody,
+  Image,
 } from "react-bootstrap";
 import { BrowserRouter as Router, Link } from "react-router-dom";
 import axios from "../utils/axios";
@@ -21,6 +22,7 @@ import moment from "moment";
 //import { useDownloadExcel } from "react-export-table-to-excel";
 import { utils, writeFileXLSX } from "xlsx";
 import "../styles/styles.css"; // Adjust the path if necessary
+import ashleyLogo from "../assets/Ashley_hotel_group.png";
 //import { savePDF } from "@progress/kendo-react-pdf";
 
 function Order() {
@@ -44,6 +46,14 @@ function Order() {
   const [isLoading, setIsLoading] = useState(true);
   const [exportPressed, setExportPressed] = useState(false);
   const [isTimeout, setIsTimeout] = useState(false);
+
+  const [vendor, setVendor] = useState({
+    id_vendor: "",
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
+  });
 
   //let pdfExportComponent;
 
@@ -90,6 +100,11 @@ function Order() {
       );
       console.log("data from data : ", data);
       console.log("has status0 : ", hasStatus0);
+      const res = await axios.get(`/api/vendor`); // Replace with your API endpoint
+      console.log("api fetched");
+      console.log("response: ", res.data.data);
+      const { id_vendor, name, phone, email, address } = res.data.data;
+      setVendor({ id_vendor, name, phone, email, address });
       setStatus1(!hasStatus0);
       setDataFetched(true);
     } catch (err) {
@@ -472,38 +487,39 @@ function Order() {
   const tableRef = useRef(null);
   const tableRef2 = useRef(null);
 
-  const xport = React.useCallback((ref, index) => {
-    /* Create worksheet from HTML DOM TABLE */
-    console.log("Current table ref: ", ref.current);
-    const wb = utils.table_to_book(ref.current);
+  const xport = React.useCallback(
+    (ref, index) => {
+      /* Create worksheet from HTML DOM TABLE */
+      console.log("Current table ref: ", ref.current);
+      const wb = utils.table_to_book(ref.current);
 
-    /* Export to file (start a download) */
-
-    if (!editMode) {
-      if (index == "1") {
-        writeFileXLSX(
-          wb,
-          "Meals Order - " +
-            moment(dateSubmitted).format("DD/MM/YYYY") +
-            ".xlsx"
-        );
-      } else if (index == "2") {
-        writeFileXLSX(
-          wb,
-          "PHI PO Meal - " +
-            moment(dateSubmitted).format("DD/MM/YYYY") +
-            ".xlsx"
-        );
+      /* Export to file (start a download) */
+      if (!editMode) {
+        if (index === "1") {
+          writeFileXLSX(
+            wb,
+            "Meals Order Detail - " +
+              moment(dateSubmitted).format("DD/MM/YYYY") +
+              ".xlsx"
+          );
+        } else if (index === "2") {
+          writeFileXLSX(
+            wb,
+            "AHG PO Meal - " +
+              moment(dateSubmitted).format("DD/MM/YYYY") +
+              ".xlsx"
+          );
+        }
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Please save or cancel the changes first",
+          //text: err.message,
+        });
       }
-    } else {
-      Swal.fire({
-        icon: "error",
-        title: "Please save or cancel the changes first",
-        //text: err.message,
-      });
-    }
-  });
-
+    },
+    [editMode, dateSubmitted]
+  );
   const handleExport1 = () => {
     if (tableRef.current) {
       xport(tableRef, "1");
@@ -511,7 +527,9 @@ function Order() {
   };
 
   const handleExport2 = () => {
+    console.log("button is pressed");
     if (tableRef2.current) {
+      console.log("tableref2 current");
       xport(tableRef2, "2");
     }
   };
@@ -528,8 +546,8 @@ function Order() {
                 <head>
                     <style>
                         body {
-                            transform: scale(1.4); /* Adjust the scale as needed */
-                            transform-origin: top left;
+                            // transform: scale(1.4); /* Adjust the scale as needed */
+                            // transform-origin: top left;
                         }
                     </style>
                 </head>
@@ -700,7 +718,7 @@ function Order() {
                     <Container className="d-flex flex-row justify-content-between ms-0 ps-0 me-0 pe-0">
                       <Card className="border-0">
                         <div
-                          ref={pdfContentRef}
+                          //ref={pdfContentRef}
                           style={{
                             marginTop: "2px",
                           }}
@@ -712,7 +730,7 @@ function Order() {
                               marginBottom: "0px",
                             }}
                           >
-                            PHI PO Meal for:{" "}
+                            AHG PO Meal for:{" "}
                             {moment(dateSubmitted).format("dddd")},{" "}
                             {moment(dateSubmitted).format("LL")}
                           </Card.Text>
@@ -1152,6 +1170,593 @@ function Order() {
           </Card>
         )}
       </Container>
+
+      {formSubmitted && dataFetched && !isLoading && data.length > 0 && (
+        <div
+          ref={pdfContentRef}
+          style={{
+            display: "none",
+          }}
+        >
+          {/* <Header /> */}
+          <div
+            className="container mt-5"
+            style={{
+              padding: "10px",
+              border: "1px solid #898989",
+              borderRadius: "12px",
+              marginBottom: "50px",
+            }}
+          >
+            <Container
+              className="mt-1 mb-5"
+              style={{ paddingLeft: "50px", paddingRight: "50px" }}
+            >
+              <Row className="mb-2 text-center">
+                <Col>
+                  <h3
+                    style={{
+                      fontSize: 38,
+                      fontWeight: "bold",
+                      marginBottom: "-30px",
+                      textAlign: "center",
+                    }}
+                  >
+                    Ashley Hotel Group
+                  </h3>
+                  {/* <Image
+                    src={ashleyLogo}
+                    style={{ width: "25%" }}
+                    alt="Ashley Hotel Group Logo"
+                    fluid
+                  /> */}
+                  <h6
+                    style={{
+                      fontSize: 20,
+                      fontWeight: "500",
+                      marginBottom: "15px",
+                      textAlign: "center",
+                    }}
+                  >
+                    PURCHASE ORDER
+                  </h6>
+                </Col>
+              </Row>
+
+              <Row>
+                <Col>
+                  <div>
+                    <Table
+                      style={{
+                        border: "1px solid gray",
+                        borderCollapse: "collapse",
+                        marginTop: "10px",
+                        marginBottom: "15px",
+                        width: "600px",
+                        //marginRight: "50px",
+                        //marginLeft: "50px",
+                        justifyContent: "start",
+                        alignItems: "start",
+                      }}
+                    >
+                      <tbody>
+                        <tr>
+                          <td
+                            style={{
+                              padding: 0,
+                              width: "390px",
+                            }}
+                          >
+                            <Table size="sm" style={{ marginRight: "30px" }}>
+                              <tbody>
+                                <tr
+                                // style={{
+                                //   border: "1px solid gray",
+
+                                //   padding: "8px",
+                                // }}
+                                >
+                                  <td style={{ width: "100px" }}>
+                                    <strong style={{ fontSize: 12 }}>
+                                      Code:
+                                    </strong>
+                                  </td>
+                                  <td style={{ fontSize: 12 }}>
+                                    {moment(dateSubmitted).format("dddd")}-
+                                    {dateSubmitted}
+                                  </td>
+                                </tr>
+
+                                <tr>
+                                  <td style={{ fontSize: 12 }}>
+                                    <strong>PO Created:</strong>
+                                  </td>
+                                  <td style={{ fontSize: 12 }}>
+                                    {moment(dateSubmitted)
+                                      .add(-1, "days")
+                                      .format("LL")}
+                                  </td>
+                                </tr>
+
+                                <tr>
+                                  <td style={{ fontSize: 12 }}>
+                                    <strong>Expected Arrival:</strong>
+                                  </td>
+                                  <td style={{ fontSize: 12 }}>
+                                    {moment(dateSubmitted).format("LL")} : 06:00{" "}
+                                  </td>
+                                </tr>
+
+                                <tr>
+                                  <td style={{ fontSize: 12 }}>
+                                    <strong>Event Date:</strong>
+                                  </td>
+                                  <td style={{ fontSize: 12 }}>
+                                    {moment(date).format("LL")}
+                                  </td>
+                                </tr>
+
+                                <tr>
+                                  <td style={{ fontSize: 12 }}>
+                                    <strong>Address:</strong>
+                                  </td>
+                                  <td style={{ fontSize: 12 }}>
+                                    Jl. KH. Wahid Hasyim No. 73-75, Menteng
+                                    Jakarta Pusat, Indonesia 10350
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </Table>
+                          </td>
+                          <td
+                            style={{
+                              padding: 0,
+                              width: "210px",
+                              paddingRight: 0,
+                              //paddingBottom: "30px",
+                            }}
+                          >
+                            <Table
+                              // style={{
+                              //   border: "1px solid gray",
+                              //   borderCollapse: "collapse",
+
+                              //   //marginRight: "50px",
+                              //   //marginLeft: "50px",
+                              // }}
+                              size="sm"
+                              style={{ paddingLeft: "20px" }}
+                            >
+                              <tbody>
+                                <tr>
+                                  <td style={{ fontSize: 12 }}>
+                                    <strong>To:</strong>
+                                  </td>
+                                  <td style={{ fontSize: 12 }}>
+                                    {vendor.name}
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td style={{ fontSize: 12 }}>
+                                    <strong>Address:</strong>
+                                  </td>
+                                  <td style={{ fontSize: 12 }}>
+                                    {vendor.address}
+                                  </td>
+                                </tr>
+                                {/* <tr>
+                                  <td style={{ fontSize: 12 }}>
+                                    <strong>Attn:</strong>
+                                  </td>
+                                  <td style={{ fontSize: 12 }}>Pak</td>
+                                </tr> */}
+                                <tr>
+                                  <td style={{ fontSize: 12 }}>
+                                    <strong>Phone:</strong>
+                                  </td>
+                                  <td style={{ fontSize: 12 }}>
+                                    {vendor.phone}
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td style={{ fontSize: 12 }}>
+                                    <strong>Email:</strong>
+                                  </td>
+                                  <td style={{ fontSize: 12 }}>
+                                    {vendor.email}
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </Table>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </Table>
+                  </div>
+                </Col>
+              </Row>
+
+              <Row className="mt-2">
+                <Col
+                  className="d-flex justify-content-center"
+                  style={{
+                    flex: 1,
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    //width: "600px",
+                  }}
+                >
+                  <Table
+                    responsive="sm"
+                    style={{
+                      border: "1px solid black",
+                      borderCollapse: "collapse",
+                      marginTop: "10px",
+                      width: "600px",
+                      marginBottom: "15px",
+                      //marginRight: "50px",
+                      //marginLeft: "50px",
+                    }}
+                  >
+                    <thead>
+                      <tr>
+                        <th
+                          rowSpan="2"
+                          style={{
+                            width: "150px",
+                            textAlign: "center",
+                            verticalAlign: "middle",
+                            border: "1px solid black",
+                            padding: "8px",
+                            fontSize: 18,
+                          }}
+                        >
+                          Hotel Name
+                        </th>
+                        <th
+                          colSpan="3"
+                          style={{
+                            textAlign: "center",
+                            border: "1px solid black",
+                            padding: "8px",
+                            fontSize: 18,
+                          }}
+                        >
+                          Shift
+                        </th>
+                      </tr>
+                      <tr>
+                        <th
+                          style={{
+                            textAlign: "center",
+                            border: "1px solid black",
+                            width: "50px",
+                            padding: "8px",
+                            fontSize: 18,
+                          }}
+                        >
+                          M
+                        </th>
+                        <th
+                          style={{
+                            textAlign: "center",
+                            border: "1px solid black",
+                            width: "50px",
+                            padding: "8px",
+                            fontSize: 18,
+                          }}
+                        >
+                          A
+                        </th>
+                        <th
+                          style={{
+                            textAlign: "center",
+                            border: "1px solid black",
+                            width: "50px",
+                            padding: "8px",
+                            fontSize: 18,
+                          }}
+                        >
+                          E
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {hotels.map((hotel, hotelIndex) => {
+                        return (
+                          <React.Fragment key={hotelIndex}>
+                            <tr>
+                              <td
+                                style={{
+                                  border: "1px solid black",
+                                  padding: "8px",
+                                  fontSize: 18,
+                                }}
+                              >
+                                {hotel.name}
+                              </td>
+                              <td
+                                style={{
+                                  textAlign: "center",
+                                  border: "1px solid black",
+                                  padding: "8px",
+                                  fontSize: 18,
+                                }}
+                                key={`total-m-${hotelIndex}`}
+                              >
+                                {totalShift[hotel.id]?.M ?? 0}
+                              </td>
+                              <td
+                                style={{
+                                  textAlign: "center",
+                                  border: "1px solid black",
+                                  padding: "8px",
+                                  fontSize: 18,
+                                }}
+                                key={`total-a-${hotelIndex}`}
+                              >
+                                {totalShift[hotel.id]?.A ?? 0}
+                              </td>
+                              <td
+                                style={{
+                                  textAlign: "center",
+                                  border: "1px solid black",
+                                  padding: "8px",
+                                  fontSize: 18,
+                                }}
+                                key={`total-e-${hotelIndex}`}
+                              >
+                                {totalShift[hotel.id]?.E ?? 0}
+                              </td>
+                            </tr>
+                          </React.Fragment>
+                        );
+                      })}
+                      <tr>
+                        <th
+                          className="text-center"
+                          style={{
+                            border: "1px solid black",
+                            padding: "8px",
+                            fontSize: 18,
+                          }}
+                        >
+                          TOTAL BY SHIFT
+                        </th>
+                        <th
+                          className="text-center"
+                          style={{
+                            border: "1px solid black",
+                            padding: "8px",
+                            fontSize: 18,
+                          }}
+                        >
+                          {totalShiftSum.M}
+                        </th>
+                        <th
+                          className="text-center"
+                          style={{
+                            border: "1px solid black",
+                            padding: "8px",
+                            fontSize: 18,
+                          }}
+                        >
+                          {totalShiftSum.A}
+                        </th>
+                        <th
+                          className="text-center"
+                          style={{
+                            border: "1px solid black",
+                            padding: "8px",
+                            fontSize: 18,
+                          }}
+                        >
+                          {totalShiftSum.E}
+                        </th>
+                      </tr>
+                    </tbody>
+                  </Table>
+                </Col>
+              </Row>
+
+              <Row className="mt-4">
+                <Col>
+                  <p>
+                    <strong>Anti Bribery / Anti Corruption undertaking</strong>
+                    <br />
+                    Anti-Bribery / Anti-Corruption Undertaking Supplier Agrees
+                    and Undertakes that in connection with Purchase Order, it
+                    will all applicable government laws, rules, and regulation
+                    of The Anti-Bribery / Anti-Corruption Policy. Supplier has
+                    not and will not directly or indirectly offer to or pay any
+                    money or anything value to hotel's employees or any other
+                    person in connection with the delivery product or the
+                    service performed under this Purchase Order. Commencement of
+                    executions of this order deems that the
+                    supplier/subcontractor accept the terms and conditions of
+                    this order.
+                  </p>
+                  <div className="text-right">
+                    <p>HR Manager</p>
+                    <p>_______</p>
+                  </div>
+                </Col>
+              </Row>
+            </Container>
+          </div>
+          {/* <Footer /> */}
+        </div>
+      )}
+
+      {/* <div>
+        <div
+          className="container mt-5"
+          style={{
+            padding: "10px",
+            border: "1px solid #898989",
+            borderRadius: "12px",
+          }}
+        >
+          <Container
+            className="mt-5 mb-5"
+            style={{ paddingLeft: "50px", paddingRight: "50px" }}
+          >
+            <Row className="mb-2 text-center">
+              <Col>
+                <h3>Ashley Wahid Hasyim</h3>
+                <h3>Ashley Tanah Abang</h3>
+                <h6>PURCHASE ORDER</h6>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col>
+                <div>
+                  <Table bordered>
+                    <tbody>
+                      <tr>
+                        <td>
+                          <Table size="sm">
+                            <tbody>
+                              <tr style={{ borderColor: "transparent" }}>
+                                <td>
+                                  <strong>P0 No:</strong>
+                                </td>
+                                <td>1</td>
+                              </tr>
+
+                              <tr style={{ borderColor: "transparent" }}>
+                                <td>
+                                  <strong>PO Created:</strong>
+                                </td>
+                                <td>{moment(dateSubmitted).format("LL")}</td>
+                              </tr>
+
+                              <tr style={{ borderColor: "transparent" }}>
+                                <td>
+                                  <strong>Expected Arrival:</strong>
+                                </td>
+                                <td>
+                                  {moment(dateSubmitted)
+                                    .add(-1, "days")
+                                    .format("LL")}{" "}
+                                  : 24:00{" "}
+                                </td>
+                              </tr>
+
+                              <tr style={{ borderColor: "transparent" }}>
+                                <td>
+                                  <strong>Event Date:</strong>
+                                </td>
+                                <td>{moment(dateSubmitted).format("LL")}</td>
+                              </tr>
+
+                              <tr style={{ borderColor: "transparent" }}>
+                                <td>
+                                  <strong>Address:</strong>
+                                </td>
+                                <td>
+                                  Jl. KH. Wahid Hasyim No. 73-75, Menteng
+                                  Jakarta Pusat, Indonesia 10350
+                                </td>
+                              </tr>
+                            </tbody>
+                          </Table>
+                        </td>
+                        <td>
+                          <Table size="sm">
+                            <tbody>
+                              <tr style={{ borderColor: "transparent" }}>
+                                <td>
+                                  <strong>To:</strong>
+                                </td>
+                                <td>RR Cake</td>
+                              </tr>
+                              <tr style={{ borderColor: "transparent" }}>
+                                <td>
+                                  <strong>Address:</strong>
+                                </td>
+                                <td>JL.Jembatan II No.1p Jakarta Utara</td>
+                              </tr>
+                              <tr style={{ borderColor: "transparent" }}>
+                                <td>
+                                  <strong>Attn:</strong>
+                                </td>
+                                <td>Pak Rudi</td>
+                              </tr>
+                              <tr style={{ borderColor: "transparent" }}>
+                                <td>
+                                  <strong>Phone:</strong>
+                                </td>
+                                <td>081510057869</td>
+                              </tr>
+                              <tr style={{ borderColor: "transparent" }}>
+                                <td>
+                                  <strong>Email:</strong>
+                                </td>
+                                <td>ragamrasa@gmail.com</td>
+                              </tr>
+                            </tbody>
+                          </Table>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </Table>
+                </div>
+              </Col>
+            </Row>
+
+            <Row className="mt-2">
+              <Col>
+                <Table bordered>
+                  <thead>
+                    <tr>
+                      <th>SKU</th>
+                      <th>Item</th>
+                      <th>Unit</th>
+                      <th>Qty</th>
+                      <th>Price</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td colSpan="5" className="text-right">
+                        <strong>Grand Total</strong>
+                      </td>
+                      <td>Rp. 10000</td>
+                    </tr>
+                  </tbody>
+                </Table>
+              </Col>
+            </Row>
+
+            <Row className="mt-2">
+              <Col>
+                <p>
+                  <strong>Anti Bribery / Anti Corruption undertaking</strong>
+                  <br />
+                  Anti-Bribery / Anti-Corruption Undertaking Supplier Agrees and
+                  Undertakes that in connection with Purchase Order, it will all
+                  applicable government laws, rules, and regulation of The
+                  Anti-Bribery / Anti-Corruption Policy. Supplier has not and
+                  will not directly or indirectly offer to or pay any money or
+                  anything value to hotel’s employees or any other person in
+                  connection with the delivery product or the service performed
+                  under this Purchase Order. Commencement of executions of this
+                  order deems that the supplier/subcontractor accept the terms
+                  and conditions of this order.
+                </p>
+                <div className="text-right">
+                  <p>Director of Finance</p>
+                  <p>_______</p>
+                </div>
+              </Col>
+            </Row>
+          </Container>
+        </div>
+      </div> */}
     </div>
   );
 }
