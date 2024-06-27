@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
 import Recapitulation from "./pages/Recap";
 import Login from "./pages/Login";
 import OrderList from "./pages/Order";
+import Vendor from "./pages/Vendor";
 // import Report from "./pages/Report";
 import PublicRoute from "./utils/PublicRoute";
 import PrivateRoute from "./utils/PrivateRoute";
@@ -14,6 +15,7 @@ function App() {
         <PublicRoute exact path="/" component={Login} />
         <PrivateRoute exact path="/dashboard" component={OrderList} />
         <PrivateRoute exact path="/recapitulation" component={Recapitulation} />
+        <PrivateRoute exact path="/vendor" component={Vendor} />
       </Switch>
     </Router>
   );

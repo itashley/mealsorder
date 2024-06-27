@@ -272,6 +272,9 @@ function Recap() {
               <Nav.Link as={Link} to="/recapitulation">
                 Recapitulation
               </Nav.Link>
+              <Nav.Link as={Link} to="/vendor">
+                Vendor
+              </Nav.Link>
             </Nav>
             <Nav className="ml-auto">
               <Nav.Link onClick={() => doLogout()}>Logout</Nav.Link>

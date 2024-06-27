@@ -92,10 +92,9 @@ function Order() {
       console.log("has status0 : ", hasStatus0);
       setStatus1(!hasStatus0);
       setDataFetched(true);
-      setIsTimeout(false);
     } catch (err) {
       console.log("error : ", err);
-      isTimeout(true);
+      setIsTimeout(true);
     } finally {
       setIsLoading(false);
       setSearching(false);
@@ -522,29 +521,59 @@ function Order() {
   const sendPDFToVendor = async () => {
     try {
       console.log("button export is pressed!");
-      const htmlContent = `<html><body>${pdfContentRef.current.innerHTML}</body></html>`; // Extract HTML content
+      setExportPressed(true);
 
-      const response = await axios.post(
-        `/public/api/msg/vendor`,
-        {
-          html: htmlContent,
-          text: `PHI PO Meal for: ${moment(dateSubmitted).format(
-            "dddd"
-          )}, ${moment(dateSubmitted).format("LL")}`,
-          id_vendor: 1,
-          date: dateSubmitted,
-        }
-        // {
-        //   responseType: "blob", // Ensure response type is blob for binary data (PDF)
-        // }
-      );
-      console.log("api is fetched!");
-      console.log("response: ", response.data.response);
-      console.log("public : ", response.data.public);
-      const url = response.data.response;
-      window.open(url); // Opens PDF in a new tab
+      const htmlContent = `
+            <html>
+                <head>
+                    <style>
+                        body {
+                            transform: scale(1.4); /* Adjust the scale as needed */
+                            transform-origin: top left;
+                        }
+                    </style>
+                </head>
+                <body>${pdfContentRef.current.innerHTML}</body>
+            </html>
+        `;
+
+      const response = await axios.post(`/public/api/msg/vendor`, {
+        html: htmlContent,
+        text: `${moment(dateSubmitted).format("dddd")}-${dateSubmitted}`,
+        //id_vendor: 1,
+        //date: dateSubmitted,
+      });
+
+      if (response.status === 200) {
+        console.log("api is fetched!");
+        console.log("response: ", response.data.data);
+        const url = response.data.data;
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          html: `PDF generated and sent to vendor successfully. <br/><a href="${url}" target="_blank">View PDF</a>`,
+        });
+        // window.open(url); // Opens PDF in a new tab
+      }
+      setExportPressed(false);
     } catch (error) {
+      setExportPressed(false);
       console.error("Error exporting to PDF:", error);
+      if (error.response && error.response.status === 404) {
+        Swal.fire({
+          icon: "error",
+          title: "Vendor Not Found",
+          text: "Vendor not found or phone number is missing. Please fill out Vendor Information in 'Vendor' Tab",
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Failed to export PDF. Please try again later.",
+        });
+      }
+    } finally {
+      setExportPressed(false);
     }
   };
 
@@ -563,6 +592,9 @@ function Order() {
               </Nav.Link>
               <Nav.Link as={Link} to="/recapitulation">
                 Recapitulation
+              </Nav.Link>
+              <Nav.Link as={Link} to="/vendor">
+                Vendor
               </Nav.Link>
             </Nav>
             <Nav className="ml-auto">
@@ -703,6 +735,7 @@ function Order() {
                                     textAlign: "center",
                                     verticalAlign: "middle",
                                     border: "1px solid black",
+                                    padding: "8px",
                                   }}
                                 >
                                   Hotel Name
@@ -712,6 +745,7 @@ function Order() {
                                   style={{
                                     textAlign: "center",
                                     border: "1px solid black",
+                                    padding: "8px",
                                   }}
                                 >
                                   Shift
@@ -723,6 +757,7 @@ function Order() {
                                     textAlign: "center",
                                     border: "1px solid black",
                                     width: "50px",
+                                    padding: "8px",
                                   }}
                                 >
                                   M
@@ -732,6 +767,7 @@ function Order() {
                                     textAlign: "center",
                                     border: "1px solid black",
                                     width: "50px",
+                                    padding: "8px",
                                   }}
                                 >
                                   A
@@ -741,6 +777,7 @@ function Order() {
                                     textAlign: "center",
                                     border: "1px solid black",
                                     width: "50px",
+                                    padding: "8px",
                                   }}
                                 >
                                   E
@@ -752,13 +789,19 @@ function Order() {
                                 return (
                                   <React.Fragment key={hotelIndex}>
                                     <tr>
-                                      <td style={{ border: "1px solid black" }}>
+                                      <td
+                                        style={{
+                                          border: "1px solid black",
+                                          padding: "8px",
+                                        }}
+                                      >
                                         {hotel.name}
                                       </td>
                                       <td
                                         style={{
                                           textAlign: "center",
                                           border: "1px solid black",
+                                          padding: "8px",
                                         }}
                                         key={`total-m-${hotelIndex}`}
                                       >
@@ -768,6 +811,7 @@ function Order() {
                                         style={{
                                           textAlign: "center",
                                           border: "1px solid black",
+                                          padding: "8px",
                                         }}
                                         key={`total-a-${hotelIndex}`}
                                       >
@@ -777,6 +821,7 @@ function Order() {
                                         style={{
                                           textAlign: "center",
                                           border: "1px solid black",
+                                          padding: "8px",
                                         }}
                                         key={`total-e-${hotelIndex}`}
                                       >
@@ -789,25 +834,37 @@ function Order() {
                               <tr>
                                 <th
                                   className="text-center"
-                                  style={{ border: "1px solid black" }}
+                                  style={{
+                                    border: "1px solid black",
+                                    padding: "8px",
+                                  }}
                                 >
                                   TOTAL BY SHIFT
                                 </th>
                                 <th
                                   className="text-center"
-                                  style={{ border: "1px solid black" }}
+                                  style={{
+                                    border: "1px solid black",
+                                    padding: "8px",
+                                  }}
                                 >
                                   {totalShiftSum.M}
                                 </th>
                                 <th
                                   className="text-center"
-                                  style={{ border: "1px solid black" }}
+                                  style={{
+                                    border: "1px solid black",
+                                    padding: "8px",
+                                  }}
                                 >
                                   {totalShiftSum.A}
                                 </th>
                                 <th
                                   className="text-center"
-                                  style={{ border: "1px solid black" }}
+                                  style={{
+                                    border: "1px solid black",
+                                    padding: "8px",
+                                  }}
                                 >
                                   {totalShiftSum.E}
                                 </th>
@@ -815,23 +872,35 @@ function Order() {
                             </tbody>
                           </Table>
                         </div>
-                        <Container className="p-0 m-0 d-flex flex-row justify-content-end">
-                          <Button
-                            variant="primary"
-                            type="submit"
-                            className="mb-2 me-2"
-                            style={{ fontSize: "11px" }}
-                            onClick={sendPDFToVendor}
-                          >
-                            Send as PDF to Vendor
-                          </Button>
+                        <Container className="p-0 m-0 d-flex flex-row justify-content-between">
+                          {!isLoading && dataFetched && data.length > 0 && (
+                            <Button
+                              variant="primary"
+                              type="submit"
+                              className="mb-2 me-2"
+                              style={{
+                                fontSize: "11px",
+                                //width: "110px",
+                                // paddingRight: "12px",
+                                // paddingLeft: "12px",
+                                //paddingBottom: "7px",
+                                //paddingTop: "7px",
+                              }}
+                              onClick={handleExport2}
+                            >
+                              Download Excel
+                            </Button>
+                          )}
                           <Button
                             variant="primary"
                             type="submit"
                             className="mb-2"
                             style={{ fontSize: "11px" }}
+                            onClick={sendPDFToVendor}
                           >
-                            Select Vendor
+                            {exportPressed
+                              ? "Sending"
+                              : "Send as PDF to Vendor"}
                           </Button>
                         </Container>
                       </Card>
@@ -1026,37 +1095,19 @@ function Order() {
               ) : (
                 <p></p>
               )}
-              <Container className="d-flex flex-row justify-content-between m-0 p-0">
+              <Container className="d-flex flex-row justify-content-end m-0 p-0">
                 {!isLoading && dataFetched && data.length > 0 && (
                   <Button
                     variant="primary"
                     type="submit"
-                    //className="me-1"
+                    className="mb-2 me-2"
                     style={{
                       fontSize: "11px",
-                      width: "110px",
-                      paddingRight: "12px",
-                      paddingLeft: "12px",
-                      paddingBottom: "7px",
-                      paddingTop: "7px",
-                    }}
-                    onClick={handleExport2}
-                  >
-                    Download Excel
-                  </Button>
-                )}
-                {!isLoading && dataFetched && data.length > 0 && (
-                  <Button
-                    variant="primary"
-                    type="submit"
-                    //className="me-1 "
-                    style={{
-                      fontSize: "11px",
-                      width: "110px",
-                      paddingRight: "12px",
-                      paddingLeft: "12px",
-                      paddingBottom: "7px",
-                      paddingTop: "7px",
+                      //width: "110px",
+                      //paddingRight: "12px",
+                      //paddingLeft: "12px",
+                      //paddingBottom: "7px",
+                      //paddingTop: "7px",
                     }}
                     onClick={handleExport1}
                   >
