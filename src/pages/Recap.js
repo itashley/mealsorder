@@ -13,7 +13,9 @@ import { BrowserRouter as Router, Link } from "react-router-dom";
 import axios from "../utils/axios";
 import Swal from "sweetalert2";
 import { useHistory } from "react-router-dom";
-import { removeUserSession } from "../utils/Common";
+//import { removeUserSession } from "../utils/Common";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 import moment from "moment";
 //import { useDownloadExcel } from "react-export-table-to-excel";
 import { utils, writeFileXLSX } from "xlsx";
@@ -21,7 +23,7 @@ import { utils, writeFileXLSX } from "xlsx";
 function Recap() {
   const [data, setData] = useState([]);
   const [range, setRange] = useState([]);
-  const history = useHistory();
+  //const history = useHistory();
   const [startDate, setStartDate] = useState();
   const [endDate, setEndDate] = useState();
   const [price, setPrice] = useState("");
@@ -31,32 +33,6 @@ function Recap() {
   const [isLoading, setIsLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [checkRangeDate, setCheckRangeDate] = useState(false);
-
-  const doLogout = async () => {
-    try {
-      const confirmed = await Swal.fire({
-        title: "Logout",
-        text: "Are you sure you want to logout?",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, logout",
-      });
-
-      if (confirmed.isConfirmed) {
-        removeUserSession();
-        history.push("/");
-      }
-    } catch (error) {
-      //console.error("Logout error:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Logout Failed",
-        text: "Failed to logout. Please try again.",
-      });
-    }
-  };
 
   const getListRec = async (startDate, endDate) => {
     try {
@@ -258,30 +234,7 @@ function Recap() {
 
   return (
     <div>
-      <Navbar bg="dark" variant="dark" expand="lg" className="mb-5">
-        <Container>
-          <Navbar.Brand as={Link} to="/">
-            Meals Order
-          </Navbar.Brand>
-          <Navbar.Toggle aria-controls="basic-navbar-nav" />
-          <Navbar.Collapse id="basic-navbar-nav">
-            <Nav className="me-auto">
-              <Nav.Link as={Link} to="/dashboard">
-                Order List
-              </Nav.Link>
-              <Nav.Link as={Link} to="/recapitulation">
-                Recapitulation
-              </Nav.Link>
-              <Nav.Link as={Link} to="/vendor">
-                Vendor
-              </Nav.Link>
-            </Nav>
-            <Nav className="ml-auto">
-              <Nav.Link onClick={() => doLogout()}>Logout</Nav.Link>
-            </Nav>
-          </Navbar.Collapse>
-        </Container>
-      </Navbar>
+      <Header />
 
       <Container
         className="d-flex justify-content-center align-items-center"
@@ -333,12 +286,17 @@ function Recap() {
 
       <Container
         className="d-flex justify-content-center align-items-center"
-        style={{ height: "auto" }}
+        style={{ height: "auto", marginBottom: "60px" }}
       >
         {formSubmitted ? (
           <Card
             className="text-justify"
-            style={{ width: "auto", fontSize: "11px", minWidth: "500px" }}
+            style={{
+              width: "auto",
+              fontSize: "11px",
+              minWidth: "500px",
+              backgroundColor: "#f8f8f8",
+            }}
           >
             <Card.Body>
               <Card.Title>CATERING RECAPITULATION</Card.Title>
@@ -368,7 +326,7 @@ function Recap() {
                   dataFetched && !isLoading ? (
                     data.length > 0 ? (
                       <Table
-                        className="table-bordered"
+                        className="table-bordered custom-table-2"
                         responsive="sm"
                         ref={tableRef}
                       >
@@ -379,6 +337,7 @@ function Recap() {
                                 minWidth: "130px",
                                 maxWidth: "200px",
                                 textAlign: "center",
+                                backgroundColor: "#f0f0f0 !important",
                               }}
                             >
                               Hotel Name
@@ -457,6 +416,7 @@ function Recap() {
               justifyContent: "center",
               alignItems: "center",
               marginRight: "210px",
+              backgroundColor: "#f8f8f8",
             }}
           >
             <Card.Body
@@ -480,6 +440,8 @@ function Recap() {
           </Card>
         )}
       </Container>
+
+      <Footer />
     </div>
   );
 }

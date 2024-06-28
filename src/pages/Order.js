@@ -17,14 +17,16 @@ import { BrowserRouter as Router, Link } from "react-router-dom";
 import axios from "../utils/axios";
 import Swal from "sweetalert2";
 import { useHistory } from "react-router-dom";
-import { removeUserSession } from "../utils/Common";
+//import { removeUserSession } from "../utils/Common";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 import moment from "moment";
 import { utils, writeFileXLSX } from "xlsx";
 import "../styles/styles.css"; // Adjust the path if necessary
 
 function Order() {
   const [data, setData] = useState([]);
-  const history = useHistory();
+  //const history = useHistory();
   const [date, setDate] = useState("");
   const [hotels, setHotels] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -52,32 +54,6 @@ function Order() {
   });
 
   const [editMode, setEditMode] = useState(false);
-
-  const doLogout = async () => {
-    try {
-      const confirmed = await Swal.fire({
-        title: "Logout",
-        text: "Are you sure you want to logout?",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, logout",
-      });
-
-      if (confirmed.isConfirmed) {
-        removeUserSession();
-        history.push("/");
-      }
-    } catch (error) {
-      //console.error("Logout error:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Logout Failed",
-        text: "Failed to logout. Please try again.",
-      });
-    }
-  };
 
   const getMealsOrder = async (date) => {
     try {
@@ -599,30 +575,7 @@ function Order() {
 
   return (
     <div>
-      <Navbar bg="dark" variant="dark" expand="lg" className="mb-4">
-        <Container>
-          <Navbar.Brand as={Link} to="/">
-            Meals Order
-          </Navbar.Brand>
-          <Navbar.Toggle aria-controls="basic-navbar-nav" />
-          <Navbar.Collapse id="basic-navbar-nav">
-            <Nav className="me-auto">
-              <Nav.Link as={Link} to="/dashboard">
-                Order List
-              </Nav.Link>
-              <Nav.Link as={Link} to="/recapitulation">
-                Recapitulation
-              </Nav.Link>
-              <Nav.Link as={Link} to="/vendor">
-                Vendor
-              </Nav.Link>
-            </Nav>
-            <Nav className="ml-auto">
-              <Nav.Link onClick={() => doLogout()}>Logout</Nav.Link>
-            </Nav>
-          </Navbar.Collapse>
-        </Container>
-      </Navbar>
+      <Header />
 
       <Container
         className="d-flex flex-column justify-content-center align-items-center"
@@ -665,7 +618,12 @@ function Order() {
 
       <Container
         className="d-flex justify-content-center align-items-center"
-        style={{ height: "auto", minWidth: "600px", maxWidth: "100%" }}
+        style={{
+          height: "auto",
+          minWidth: "600px",
+          maxWidth: "100%",
+          marginBottom: "55px",
+        }}
       >
         {dateSubmitted ? (
           <Card
@@ -675,7 +633,7 @@ function Order() {
               maxWidth: "100%",
               fontSize: "11px",
               //minWidth: "600px",
-              //backgroundColor: "#ff0000",
+              backgroundColor: "#f8f8f8",
               //margin: "auto",
             }}
           >
@@ -716,7 +674,10 @@ function Order() {
                 dataFetched && !isLoading ? (
                   data.length > 0 ? (
                     <Container className="d-flex flex-row justify-content-between ms-0 ps-0 me-0 pe-0">
-                      <Card className="border-0 mt-2">
+                      <Card
+                        className="border-0 mt-2"
+                        style={{ backgroundColor: "#f8f8f8" }}
+                      >
                         <div
                           //ref={pdfContentRef}
                           style={{
@@ -737,6 +698,7 @@ function Order() {
 
                           <Table
                             responsive="sm"
+                            className="custom-table-2"
                             style={{
                               border: "1px solid black",
                               borderCollapse: "collapse",
@@ -925,7 +887,7 @@ function Order() {
 
                       <Card
                         className="border-0 ms-4"
-                        style={{ marginTop: "0px" }}
+                        style={{ marginTop: "0px", backgroundColor: "#f8f8f8" }}
                       >
                         <Container className="d-flex flex-row justify-content-between p-0">
                           {editMode && (
@@ -966,7 +928,7 @@ function Order() {
                         </Container>
 
                         <Table
-                          className="table-bordered mt-2 mb-3"
+                          className="table-bordered mt-2 mb-3 custom-table-2"
                           responsive="sm"
                           ref={tableRef}
                         >
@@ -1142,6 +1104,8 @@ function Order() {
               justifyContent: "center",
               alignItems: "center",
               marginRight: "49px",
+              backgroundColor: "#f8f8f8",
+              marginTop: "-10px",
             }}
           >
             <Card.Body
@@ -1584,6 +1548,8 @@ function Order() {
           {/* <Footer /> */}
         </div>
       )}
+
+      <Footer />
     </div>
   );
 }

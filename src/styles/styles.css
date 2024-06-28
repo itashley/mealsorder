@@ -28,3 +28,16 @@ input[type="number"] {
 .custom-table td {
   border: var(--kendo-table-border-width) solid #8f8f8f; /* Adjust color as needed */
 }
+
+.custom-table-2 {
+  background-color: #f8f8f8;
+}
+
+.custom-table-2 th,
+.custom-table-2 td {
+  background-color: #f8f8f8;
+}
+
+body {
+  background-color: #f8f8f8;
+}

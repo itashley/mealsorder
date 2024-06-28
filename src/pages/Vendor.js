@@ -16,14 +16,16 @@ import { BrowserRouter as Router, Link } from "react-router-dom";
 import axios from "../utils/axios";
 import Swal from "sweetalert2";
 import { useHistory } from "react-router-dom";
-import { removeUserSession } from "../utils/Common";
+//import { removeUserSession } from "../utils/Common";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 import moment from "moment";
 //import { useDownloadExcel } from "react-export-table-to-excel";
 import { utils, writeFileXLSX } from "xlsx";
 import "../styles/styles.css"; // Adjust the path if necessary
 
 function Vendor() {
-  const history = useHistory();
+  //const history = useHistory();
 
   const [vendor, setVendor] = useState({
     id_vendor: "",
@@ -35,32 +37,6 @@ function Vendor() {
   const [editMode, setEditMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-
-  const doLogout = async () => {
-    try {
-      const confirmed = await Swal.fire({
-        title: "Logout",
-        text: "Are you sure you want to logout?",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, logout",
-      });
-
-      if (confirmed.isConfirmed) {
-        removeUserSession();
-        history.push("/");
-      }
-    } catch (error) {
-      console.error("Logout error:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Logout Failed",
-        text: "Failed to logout. Please try again.",
-      });
-    }
-  };
 
   useEffect(() => {
     fetchVendorInformation();
@@ -145,41 +121,21 @@ function Vendor() {
 
   return (
     <div>
-      <Navbar bg="dark" variant="dark" expand="lg" className="mb-5">
-        <Container>
-          <Navbar.Brand as={Link} to="/">
-            Meals Order
-          </Navbar.Brand>
-          <Navbar.Toggle aria-controls="basic-navbar-nav" />
-          <Navbar.Collapse id="basic-navbar-nav">
-            <Nav className="me-auto">
-              <Nav.Link as={Link} to="/dashboard">
-                Order List
-              </Nav.Link>
-              <Nav.Link as={Link} to="/recapitulation">
-                Recapitulation
-              </Nav.Link>
-              <Nav.Link as={Link} to="/vendor">
-                Vendor
-              </Nav.Link>
-            </Nav>
-            <Nav className="ml-auto">
-              <Nav.Link onClick={() => doLogout()}>Logout</Nav.Link>
-            </Nav>
-          </Navbar.Collapse>
-        </Container>
-      </Navbar>
+      <Header />
 
-      <Container style={{ width: "600px" }}>
-        <h1 style={{ marginBottom: "30px" }}>Meals Vendor Information</h1>
+      <Container style={{ width: "600px", paddingTop: 20 }}>
+        <h4 style={{ marginBottom: "30px", fontWeight: "700" }}>
+          Meals Vendor Information
+        </h4>
 
         <Form>
           <Form.Group as={Row} className="mb-3" controlId="formVendorName">
-            <Form.Label column sm="2">
+            <Form.Label column sm="2" style={{ fontSize: "14px" }}>
               Name
             </Form.Label>
             <Col sm="10">
               <Form.Control
+                style={{ fontSize: "14px" }}
                 type="text"
                 placeholder="Enter vendor name"
                 name="name"
@@ -191,11 +147,12 @@ function Vendor() {
           </Form.Group>
 
           <Form.Group as={Row} className="mb-3" controlId="formVendorPhone">
-            <Form.Label column sm="2">
+            <Form.Label column sm="2" style={{ fontSize: "14px" }}>
               Phone
             </Form.Label>
             <Col sm="10">
               <Form.Control
+                style={{ fontSize: "14px" }}
                 type="text"
                 placeholder="Enter vendor phone"
                 name="phone"
@@ -207,11 +164,12 @@ function Vendor() {
           </Form.Group>
 
           <Form.Group as={Row} className="mb-3" controlId="formVendorEmail">
-            <Form.Label column sm="2">
+            <Form.Label column sm="2" style={{ fontSize: "14px" }}>
               Email
             </Form.Label>
             <Col sm="10">
               <Form.Control
+                style={{ fontSize: "14px" }}
                 type="email"
                 placeholder="Enter vendor email"
                 name="email"
@@ -223,11 +181,12 @@ function Vendor() {
           </Form.Group>
 
           <Form.Group as={Row} className="mb-3" controlId="formVendorAddress">
-            <Form.Label column sm="2">
+            <Form.Label column sm="2" style={{ fontSize: "14px" }}>
               Address
             </Form.Label>
             <Col sm="10">
               <Form.Control
+                style={{ fontSize: "14px" }}
                 as="textarea"
                 rows={3}
                 placeholder="Enter vendor address"
@@ -244,14 +203,14 @@ function Vendor() {
               {editMode ? (
                 <>
                   <Button
-                    style={{ width: "70px" }}
+                    style={{ width: "70px", fontSize: "14px" }}
                     variant="primary"
                     onClick={handleSave}
                   >
                     {isSaving ? "Saving.." : "Save"}
                   </Button>
                   <Button
-                    style={{ width: "70px" }}
+                    style={{ width: "70px", fontSize: "14px" }}
                     variant="secondary"
                     className="ms-2"
                     onClick={handleCancel}
@@ -261,7 +220,7 @@ function Vendor() {
                 </>
               ) : (
                 <Button
-                  style={{ width: "70px" }}
+                  style={{ width: "70px", fontSize: "14px" }}
                   variant="primary"
                   onClick={handleEdit}
                 >
@@ -272,6 +231,8 @@ function Vendor() {
           </Form.Group>
         </Form>
       </Container>
+
+      <Footer />
     </div>
   );
 }
