@@ -66,6 +66,14 @@ function Vendor() {
     fetchVendorInformation();
   }, []);
 
+  const getToken = () => {
+    // Retrieve token from localStorage
+    const token = localStorage.getItem("token");
+
+    // Return the token
+    return token;
+  };
+
   const fetchVendorInformation = async () => {
     try {
       setIsLoading(true);
@@ -96,6 +104,10 @@ function Vendor() {
   };
 
   const handleEdit = () => {
+    const token = getToken();
+    if (!token) {
+      throw new Error("No authorization token found");
+    }
     setEditMode(true);
   };
 

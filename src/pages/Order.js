@@ -19,11 +19,8 @@ import Swal from "sweetalert2";
 import { useHistory } from "react-router-dom";
 import { removeUserSession } from "../utils/Common";
 import moment from "moment";
-//import { useDownloadExcel } from "react-export-table-to-excel";
 import { utils, writeFileXLSX } from "xlsx";
 import "../styles/styles.css"; // Adjust the path if necessary
-import ashleyLogo from "../assets/Ashley_hotel_group.png";
-//import { savePDF } from "@progress/kendo-react-pdf";
 
 function Order() {
   const [data, setData] = useState([]);
@@ -41,7 +38,6 @@ function Order() {
   const [dataFetched, setDataFetched] = useState(false);
   const [dateSubmitted, setDateSubmitted] = useState();
   const [status1, setStatus1] = useState(false);
-  const [confirming, setConfirming] = useState(false);
   const [searching, setSearching] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [exportPressed, setExportPressed] = useState(false);
@@ -54,8 +50,6 @@ function Order() {
     email: "",
     address: "",
   });
-
-  //let pdfExportComponent;
 
   const [editMode, setEditMode] = useState(false);
 
@@ -76,7 +70,7 @@ function Order() {
         history.push("/");
       }
     } catch (error) {
-      console.error("Logout error:", error);
+      //console.error("Logout error:", error);
       Swal.fire({
         icon: "error",
         title: "Logout Failed",
@@ -89,31 +83,31 @@ function Order() {
     try {
       setSearching(true);
       setIsLoading(true);
-      console.log("date:", date);
+      // console.log("date:", date);
       const response = await axios.get(`api/meals/order/${date}`);
-      console.log("Data fetch by API, res.data: ", response.data);
+      //  console.log("Data fetch by API, res.data: ", response.data);
       setData(response.data.data);
       extractUniqueNames(response.data.data);
       //calculateTotalsByShift();
       const hasStatus0 = response.data.data.some(
         (item) => item.stts_order === 0
       );
-      console.log("data from data : ", data);
-      console.log("has status0 : ", hasStatus0);
+      //console.log("data from data : ", data);
+      //console.log("has status0 : ", hasStatus0);
       const res = await axios.get(`/api/vendor`); // Replace with your API endpoint
-      console.log("api fetched");
-      console.log("response: ", res.data.data);
+      //console.log("api fetched");
+      //console.log("response: ", res.data.data);
       const { id_vendor, name, phone, email, address } = res.data.data;
       setVendor({ id_vendor, name, phone, email, address });
       setStatus1(!hasStatus0);
       setDataFetched(true);
     } catch (err) {
-      console.log("error : ", err);
+      //console.log("error : ", err);
       setIsTimeout(true);
     } finally {
       setIsLoading(false);
       setSearching(false);
-      console.log("get meals order DONE");
+      //console.log("get meals order DONE");
     }
   };
 
@@ -139,12 +133,17 @@ function Order() {
 
     // Update state with sorted hotels and departments
     setHotels(uniqueHotels);
-    console.log("hotels in extract: ", uniqueHotels);
+    //console.log("hotels in extract: ", uniqueHotels);
     setDepartments(uniqueDepartments);
-    console.log("departments in extract: ", uniqueDepartments);
+    //console.log("departments in extract: ", uniqueDepartments);
   };
 
   const toggleEditMode = () => {
+    const token = getToken();
+    if (!token) {
+      throw new Error("No authorization token found");
+    }
+
     if (editMode) {
       getMealsOrder(dateSubmitted);
       setEditMode(false);
@@ -156,14 +155,14 @@ function Order() {
   const saveChanges = async () => {
     try {
       setIsLoading(true);
-      console.log("Data: ", data);
-      console.log("Date: ", dateSubmitted);
+      //.log("Data: ", data);
+      //console.log("Date: ", dateSubmitted);
       const res = await axios.post(`/public/api/edit/order`, {
         date: dateSubmitted,
         data: data,
       });
-      console.log("Api is hit!");
-      console.log("Data fetch by API, res.data: ", res.data);
+      //console.log("Api is hit!");
+      //console.log("Data fetch by API, res.data: ", res.data);
       setData(res.data.data);
       Swal.fire({
         icon: "success",
@@ -172,7 +171,7 @@ function Order() {
         timer: 1500,
       });
     } catch (err) {
-      console.error("Error saving changes:", err);
+      //console.error("Error saving changes:", err);
       Swal.fire({
         icon: "error",
         title: "Failed to save changes!",
@@ -185,37 +184,37 @@ function Order() {
   };
 
   const handleDataChange = (newValue, deptIndex, hotelIndex, column) => {
-    console.log("newValue:", newValue);
-    console.log("deptIndex:", deptIndex);
-    console.log("hotelIndex:", hotelIndex);
-    console.log("column:", column);
+    //console.log("newValue:", newValue);
+    //console.log("deptIndex:", deptIndex);
+    //console.log("hotelIndex:", hotelIndex);
+    //console.log("column:", column);
 
     const updatedData = [...data];
-    console.log("Updated data 1st: ", updatedData);
+    //console.log("Updated data 1st: ", updatedData);
 
     // Get the department and hotel IDs
     const deptId = departments[deptIndex].id;
     const hotelId = hotels[hotelIndex].id;
-    console.log("deptId:", deptId);
-    console.log("hotelId:", hotelId);
+    //console.log("deptId:", deptId);
+    //console.log("hotelId:", hotelId);
 
     // Find the item that matches the department and hotel IDs
     const itemIndex = updatedData.findIndex(
       (item) => item.dept_id === deptId && item.hotel_id === hotelId
     );
-    console.log("itemIndex:", itemIndex);
+    //console.log("itemIndex:", itemIndex);
 
     if (itemIndex !== -1) {
       // Update the value of the specified column
       updatedData[itemIndex][column] = parseInt(newValue, 10) || 0;
 
       // Update the state and recalculate totals
-      console.log("updatedData 2nd:", updatedData);
+      //console.log("updatedData 2nd:", updatedData);
       setData(updatedData);
       calculateTotalsByShift();
       calculateTotalsByHotel();
     } else {
-      console.log("Item not found in the data.");
+      //console.log("Item not found in the data.");
     }
   };
 
@@ -387,7 +386,7 @@ function Order() {
     });
 
     setTotalShift(totalShiftData);
-    console.log("Total Shift Data:", totalShiftData);
+    //console.log("Total Shift Data:", totalShiftData);
 
     Object.values(totalShiftData).forEach((hotelData) => {
       totalShiftSumData.M += hotelData.M;
@@ -396,7 +395,7 @@ function Order() {
     });
 
     setTotalShiftSum(totalShiftSumData);
-    console.log("Total Shift Sum Data:", totalShiftSumData);
+    //console.log("Total Shift Sum Data:", totalShiftSumData);
   };
 
   const calculateTotalsByHotel = () => {
@@ -430,12 +429,12 @@ function Order() {
       Object.values(totalHotelSum).reduce((acc, total) => acc + total, 0)
     );
 
-    console.log("Total Hotel Data:", totalHotelData);
-    console.log("Total Hotel Sum:", totalHotelSum);
-    console.log(
-      "Total All:",
-      Object.values(totalHotelSum).reduce((acc, total) => acc + total, 0)
-    );
+    //console.log("Total Hotel Data:", totalHotelData);
+    //console.log("Total Hotel Sum:", totalHotelSum);
+    // console.log(
+    //   "Total All:",
+    //   Object.values(totalHotelSum).reduce((acc, total) => acc + total, 0)
+    // );
   };
 
   useEffect(() => {
@@ -459,30 +458,31 @@ function Order() {
     return token;
   };
 
-  const onConfirm = async () => {
-    try {
-      const token = getToken();
+  // function to change status, moved to sendPDF to vendor
+  // const onConfirm = async () => {
+  //   try {
+  //     const token = getToken();
 
-      if (!token) {
-        throw new Error("No authorization token found");
-      }
-      setConfirming(true);
-      console.log("confirm date:", dateSubmitted);
+  //     if (!token) {
+  //       throw new Error("No authorization token found");
+  //     }
+  //     setConfirming(true);
+  //     console.log("confirm date:", dateSubmitted);
 
-      const response = await axios.post(`/public/api/confirm/order`, {
-        date: dateSubmitted,
-      });
-      console.log("Data fetch by API, res.data: ", response.data);
-      setStatus1(true);
-      console.log("status1: ", status1);
-      setConfirming(false);
-    } catch (err) {
-      console.log("Error:", err);
-      console.log("Response:", err.response);
-    } finally {
-      console.log("Confirm DONE");
-    }
-  };
+  //     const response = await axios.post(`/public/api/confirm/order`, {
+  //       date: dateSubmitted,
+  //     });
+  //     console.log("Data fetch by API, res.data: ", response.data);
+  //     setStatus1(true);
+  //     console.log("status1: ", status1);
+  //     setConfirming(false);
+  //   } catch (err) {
+  //     console.log("Error:", err);
+  //     console.log("Response:", err.response);
+  //   } finally {
+  //     console.log("Confirm DONE");
+  //   }
+  // };
 
   const tableRef = useRef(null);
   const tableRef2 = useRef(null);
@@ -490,7 +490,7 @@ function Order() {
   const xport = React.useCallback(
     (ref, index) => {
       /* Create worksheet from HTML DOM TABLE */
-      console.log("Current table ref: ", ref.current);
+      //console.log("Current table ref: ", ref.current);
       const wb = utils.table_to_book(ref.current);
 
       /* Export to file (start a download) */
@@ -527,9 +527,9 @@ function Order() {
   };
 
   const handleExport2 = () => {
-    console.log("button is pressed");
+    //onsole.log("button is pressed");
     if (tableRef2.current) {
-      console.log("tableref2 current");
+      //console.log("tableref2 current");
       xport(tableRef2, "2");
     }
   };
@@ -538,7 +538,7 @@ function Order() {
 
   const sendPDFToVendor = async () => {
     try {
-      console.log("button export is pressed!");
+      //console.log("button export is pressed!");
       setExportPressed(true);
 
       const htmlContent = `
@@ -559,24 +559,26 @@ function Order() {
         html: htmlContent,
         text: `${moment(dateSubmitted).format("dddd")}-${dateSubmitted}`,
         //id_vendor: 1,
-        //date: dateSubmitted,
+        date: dateSubmitted,
       });
 
       if (response.status === 200) {
-        console.log("api is fetched!");
-        console.log("response: ", response.data.data);
+        //console.log("api is fetched!");
+        //console.log("responsedatadata: ", response.data.data);
+        //console.log("response: ", response);
         const url = response.data.data;
         Swal.fire({
           icon: "success",
           title: "Success",
           html: `PDF generated and sent to vendor successfully. <br/><a href="${url}" target="_blank">View PDF</a>`,
         });
-        // window.open(url); // Opens PDF in a new tab
+        setStatus1(true);
+        window.open(url); // Opens PDF in a new tab
       }
       setExportPressed(false);
     } catch (error) {
       setExportPressed(false);
-      console.error("Error exporting to PDF:", error);
+      //console.error("Error exporting to PDF:", error);
       if (error.response && error.response.status === 404) {
         Swal.fire({
           icon: "error",
@@ -663,12 +665,19 @@ function Order() {
 
       <Container
         className="d-flex justify-content-center align-items-center"
-        style={{ height: "auto", width: "auto" }}
+        style={{ height: "auto", minWidth: "600px", maxWidth: "100%" }}
       >
         {dateSubmitted ? (
           <Card
             className="text-justify, mb-3"
-            style={{ width: "auto", fontSize: "11px", minWidth: "600px" }}
+            style={{
+              minWidth: "600px",
+              maxWidth: "100%",
+              fontSize: "11px",
+              //minWidth: "600px",
+              //backgroundColor: "#ff0000",
+              //margin: "auto",
+            }}
           >
             <Card.Body
               className="d-flex flex-column"
@@ -680,35 +689,26 @@ function Order() {
                 Set date to get Meals Order
               </Card.Text> */}
 
-              {!isLoading && data.length == 0 && (
-                <Row className="align-items-center mb-3">
-                  <Col>
-                    <Card.Text style={{ fontSize: "14px", fontWeight: "bold" }}>
-                      Order for: {moment(dateSubmitted).format("dddd")},{" "}
-                      {moment(dateSubmitted).format("LL")}
-                    </Card.Text>
-                  </Col>
-                  {data.length > 0 &&
-                    (status1 ? (
-                      <Col className="d-flex justify-content-end">
-                        <Card.Text
-                          style={{ fontSize: "12px", fontWeight: "600" }}
-                        >
-                          {/* This Order has been confirmed. */}
-                        </Card.Text>
-                      </Col>
-                    ) : (
-                      <Col className="d-flex justify-content-end">
-                        <Button
-                          variant="primary"
-                          type="submit"
-                          style={{ fontSize: "11px" }}
-                          onClick={onConfirm}
-                        >
-                          {confirming ? "Confirming..." : "Confirm this Order"}
-                        </Button>
-                      </Col>
-                    ))}
+              {!isLoading && data.length > 0 && (
+                <Row className="align-items-center mb-1">
+                  {data.length > 0 && status1 && (
+                    <Col className="d-flex justify-content-start">
+                      <Card.Text
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: "600",
+                          color: "#fff",
+                          padding: 5,
+                          paddingRight: 8,
+                          paddingLeft: 8,
+                          borderRadius: 8,
+                          backgroundColor: "#2e2e2e",
+                        }}
+                      >
+                        This Order has been sent to vendor.
+                      </Card.Text>
+                    </Col>
+                  )}
                 </Row>
               )}
 
@@ -716,7 +716,7 @@ function Order() {
                 dataFetched && !isLoading ? (
                   data.length > 0 ? (
                     <Container className="d-flex flex-row justify-content-between ms-0 ps-0 me-0 pe-0">
-                      <Card className="border-0">
+                      <Card className="border-0 mt-2">
                         <div
                           //ref={pdfContentRef}
                           style={{
@@ -725,7 +725,7 @@ function Order() {
                         >
                           <Card.Text
                             style={{
-                              fontSize: "14px",
+                              fontSize: "12px",
                               fontWeight: "bold",
                               marginBottom: "0px",
                             }}
@@ -895,7 +895,7 @@ function Order() {
                             <Button
                               variant="primary"
                               type="submit"
-                              className="mb-2 me-2"
+                              className="mb-2 me-2 p-0 ps-2 pe-2"
                               style={{
                                 fontSize: "11px",
                                 //width: "110px",
@@ -924,7 +924,7 @@ function Order() {
                       </Card>
 
                       <Card
-                        className="border-0 ms-5"
+                        className="border-0 ms-4"
                         style={{ marginTop: "0px" }}
                       >
                         <Container className="d-flex flex-row justify-content-between p-0">
@@ -987,7 +987,7 @@ function Order() {
                                   key={index}
                                   colSpan="3"
                                   style={{
-                                    minWidth: "120px",
+                                    minWidth: "90px",
                                     maxWidth: "200px",
                                     textAlign: "center",
                                   }}
@@ -1100,6 +1100,21 @@ function Order() {
                             )}
                           </tbody>
                         </Table>
+                        <Container className="d-flex flex-row justify-content-end m-0 p-0">
+                          {!isLoading && dataFetched && data.length > 0 && (
+                            <Button
+                              variant="primary"
+                              type="submit"
+                              className="mb-2 me-2"
+                              style={{
+                                fontSize: "11px",
+                              }}
+                              onClick={handleExport1}
+                            >
+                              Download Excel
+                            </Button>
+                          )}
+                        </Container>
                       </Card>
                     </Container>
                   ) : (
@@ -1113,26 +1128,6 @@ function Order() {
               ) : (
                 <p></p>
               )}
-              <Container className="d-flex flex-row justify-content-end m-0 p-0">
-                {!isLoading && dataFetched && data.length > 0 && (
-                  <Button
-                    variant="primary"
-                    type="submit"
-                    className="mb-2 me-2"
-                    style={{
-                      fontSize: "11px",
-                      //width: "110px",
-                      //paddingRight: "12px",
-                      //paddingLeft: "12px",
-                      //paddingBottom: "7px",
-                      //paddingTop: "7px",
-                    }}
-                    onClick={handleExport1}
-                  >
-                    Download Excel
-                  </Button>
-                )}
-              </Container>
             </Card.Body>
           </Card>
         ) : (
@@ -1171,6 +1166,7 @@ function Order() {
         )}
       </Container>
 
+      {/* hidden template PO */}
       {formSubmitted && dataFetched && !isLoading && data.length > 0 && (
         <div
           ref={pdfContentRef}
@@ -1562,7 +1558,7 @@ function Order() {
 
               <Row className="mt-4">
                 <Col>
-                  <p>
+                  <p style={{ fontSize: 12 }}>
                     <strong>Anti Bribery / Anti Corruption undertaking</strong>
                     <br />
                     Anti-Bribery / Anti-Corruption Undertaking Supplier Agrees
@@ -1578,8 +1574,8 @@ function Order() {
                     this order.
                   </p>
                   <div className="text-right">
-                    <p>HR Manager</p>
-                    <p>_______</p>
+                    <p style={{ fontSize: 12 }}>HR Manager</p>
+                    <p style={{ fontSize: 12 }}>_______</p>
                   </div>
                 </Col>
               </Row>
@@ -1588,175 +1584,6 @@ function Order() {
           {/* <Footer /> */}
         </div>
       )}
-
-      {/* <div>
-        <div
-          className="container mt-5"
-          style={{
-            padding: "10px",
-            border: "1px solid #898989",
-            borderRadius: "12px",
-          }}
-        >
-          <Container
-            className="mt-5 mb-5"
-            style={{ paddingLeft: "50px", paddingRight: "50px" }}
-          >
-            <Row className="mb-2 text-center">
-              <Col>
-                <h3>Ashley Wahid Hasyim</h3>
-                <h3>Ashley Tanah Abang</h3>
-                <h6>PURCHASE ORDER</h6>
-              </Col>
-            </Row>
-
-            <Row>
-              <Col>
-                <div>
-                  <Table bordered>
-                    <tbody>
-                      <tr>
-                        <td>
-                          <Table size="sm">
-                            <tbody>
-                              <tr style={{ borderColor: "transparent" }}>
-                                <td>
-                                  <strong>P0 No:</strong>
-                                </td>
-                                <td>1</td>
-                              </tr>
-
-                              <tr style={{ borderColor: "transparent" }}>
-                                <td>
-                                  <strong>PO Created:</strong>
-                                </td>
-                                <td>{moment(dateSubmitted).format("LL")}</td>
-                              </tr>
-
-                              <tr style={{ borderColor: "transparent" }}>
-                                <td>
-                                  <strong>Expected Arrival:</strong>
-                                </td>
-                                <td>
-                                  {moment(dateSubmitted)
-                                    .add(-1, "days")
-                                    .format("LL")}{" "}
-                                  : 24:00{" "}
-                                </td>
-                              </tr>
-
-                              <tr style={{ borderColor: "transparent" }}>
-                                <td>
-                                  <strong>Event Date:</strong>
-                                </td>
-                                <td>{moment(dateSubmitted).format("LL")}</td>
-                              </tr>
-
-                              <tr style={{ borderColor: "transparent" }}>
-                                <td>
-                                  <strong>Address:</strong>
-                                </td>
-                                <td>
-                                  Jl. KH. Wahid Hasyim No. 73-75, Menteng
-                                  Jakarta Pusat, Indonesia 10350
-                                </td>
-                              </tr>
-                            </tbody>
-                          </Table>
-                        </td>
-                        <td>
-                          <Table size="sm">
-                            <tbody>
-                              <tr style={{ borderColor: "transparent" }}>
-                                <td>
-                                  <strong>To:</strong>
-                                </td>
-                                <td>RR Cake</td>
-                              </tr>
-                              <tr style={{ borderColor: "transparent" }}>
-                                <td>
-                                  <strong>Address:</strong>
-                                </td>
-                                <td>JL.Jembatan II No.1p Jakarta Utara</td>
-                              </tr>
-                              <tr style={{ borderColor: "transparent" }}>
-                                <td>
-                                  <strong>Attn:</strong>
-                                </td>
-                                <td>Pak Rudi</td>
-                              </tr>
-                              <tr style={{ borderColor: "transparent" }}>
-                                <td>
-                                  <strong>Phone:</strong>
-                                </td>
-                                <td>081510057869</td>
-                              </tr>
-                              <tr style={{ borderColor: "transparent" }}>
-                                <td>
-                                  <strong>Email:</strong>
-                                </td>
-                                <td>ragamrasa@gmail.com</td>
-                              </tr>
-                            </tbody>
-                          </Table>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </Table>
-                </div>
-              </Col>
-            </Row>
-
-            <Row className="mt-2">
-              <Col>
-                <Table bordered>
-                  <thead>
-                    <tr>
-                      <th>SKU</th>
-                      <th>Item</th>
-                      <th>Unit</th>
-                      <th>Qty</th>
-                      <th>Price</th>
-                      <th>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td colSpan="5" className="text-right">
-                        <strong>Grand Total</strong>
-                      </td>
-                      <td>Rp. 10000</td>
-                    </tr>
-                  </tbody>
-                </Table>
-              </Col>
-            </Row>
-
-            <Row className="mt-2">
-              <Col>
-                <p>
-                  <strong>Anti Bribery / Anti Corruption undertaking</strong>
-                  <br />
-                  Anti-Bribery / Anti-Corruption Undertaking Supplier Agrees and
-                  Undertakes that in connection with Purchase Order, it will all
-                  applicable government laws, rules, and regulation of The
-                  Anti-Bribery / Anti-Corruption Policy. Supplier has not and
-                  will not directly or indirectly offer to or pay any money or
-                  anything value to hotel’s employees or any other person in
-                  connection with the delivery product or the service performed
-                  under this Purchase Order. Commencement of executions of this
-                  order deems that the supplier/subcontractor accept the terms
-                  and conditions of this order.
-                </p>
-                <div className="text-right">
-                  <p>Director of Finance</p>
-                  <p>_______</p>
-                </div>
-              </Col>
-            </Row>
-          </Container>
-        </div>
-      </div> */}
     </div>
   );
 }
