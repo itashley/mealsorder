@@ -77,16 +77,16 @@ function Vendor() {
   const fetchVendorInformation = async () => {
     try {
       setIsLoading(true);
-      console.log("fetching api...");
+      //console.log("fetching api...");
       const response = await axios.get(`/api/vendor`); // Replace with your API endpoint
-      console.log("api fetched");
-      console.log("response: ", response.data.data);
+      //console.log("api fetched");
+      //console.log("response: ", response.data.data);
       const { id_vendor, name, phone, email, address } = response.data.data;
       setVendor({ id_vendor, name, phone, email, address });
       setIsLoading(false);
     } catch (error) {
       setIsLoading(false);
-      console.error("Error fetching vendor information:", error);
+      // console.error("Error fetching vendor information:", error);
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -94,7 +94,7 @@ function Vendor() {
       });
     } finally {
       setIsLoading(false);
-      console.log("get vendor info DONE");
+      //console.log("get vendor info DONE");
     }
   };
 
@@ -114,9 +114,9 @@ function Vendor() {
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      console.log("saving...");
+      //console.log("saving...");
       const response = await axios.post("/api/edit/vendor", vendor); // Replace with your API endpoint
-      console.log("edit response:", response);
+      //console.log("edit response:", response);
       Swal.fire({
         icon: "success",
         title: "Success",
@@ -126,7 +126,7 @@ function Vendor() {
       setIsSaving(false);
     } catch (error) {
       setIsSaving(false);
-      console.error("Error updating vendor information:", error);
+      //console.error("Error updating vendor information:", error);
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -134,7 +134,7 @@ function Vendor() {
       });
     } finally {
       setIsSaving(false);
-      console.log("saving vendor info DONE");
+      //console.log("saving vendor info DONE");
     }
   };
 

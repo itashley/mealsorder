@@ -49,7 +49,7 @@ function Recap() {
         history.push("/");
       }
     } catch (error) {
-      console.error("Logout error:", error);
+      //console.error("Logout error:", error);
       Swal.fire({
         icon: "error",
         title: "Logout Failed",
@@ -65,16 +65,16 @@ function Recap() {
       const response = await axios.get(
         `api/recap/data/${startDate}/${endDate}`
       );
-      console.log(response.data);
+      //console.log(response.data);
       setData(response.data.data);
       setRange(response.data.range);
       setDataFetched(true);
     } catch (err) {
-      console.log(err);
+      //console.log(err);
     } finally {
       setSearching(false);
       setIsLoading(false);
-      console.log("DONE");
+      //console.log("DONE");
     }
   };
 
@@ -82,15 +82,15 @@ function Recap() {
     if (startDate > endDate) {
       // If start date is greater than end date
       setCheckRangeDate(true);
-      console.log("check range date : ", checkRangeDate);
+      //console.log("check range date : ", checkRangeDate);
     } else {
       setCheckRangeDate(false);
-      console.log("check range date : ", checkRangeDate);
+      //console.log("check range date : ", checkRangeDate);
     }
     e.preventDefault();
     getListRec(startDate, endDate);
     setFormSubmitted(true);
-    console.log("formSubmitted : ", formSubmitted);
+    //console.log("formSubmitted : ", formSubmitted);
     setDataFetched(true);
   };
 
@@ -237,7 +237,7 @@ function Recap() {
 
   const xport = React.useCallback(() => {
     /* Create worksheet from HTML DOM TABLE */
-    console.log("Current table ref: ", tableRef.current);
+    //console.log("Current table ref: ", tableRef.current);
     const wb = utils.table_to_book(tableRef.current);
 
     const getFilename = (startDate, endDate, price) => {
